@@ -497,14 +497,14 @@ select, .date-input {
                             />
                         </div>
 
-                        <div class="form-group">
-                            <label for="material-select">Material</label>
-                            <select id="material-select">
-                                <option value="">Browse</option>
-                                <option value="material1">Material 1</option>
-                                <option value="material2">Material 2</option>
-                            </select>
-                        </div>
+                       <div class="form-group">
+  <label for="material-select">Material</label>
+  <select id="material-select">
+    <option value="browse">Browse</option>
+    <option value="material1">Material 1</option>
+    <option value="material2">Material 2</option>
+  </select>
+</div>
 
                         <div class="button-group">
                             <div class="assignment-buttons">
@@ -634,6 +634,19 @@ select, .date-input {
     </main>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+    const materialSelect = document.getElementById("material-select");
+
+    materialSelect.addEventListener("change", function () {
+      const value = materialSelect.value;
+
+      if (value === "browse") {
+        window.location.href = "/browse"; // Redirect
+      } else {
+        console.log("Selected:", value);
+      }
+    });
+  });
         // Button toggle functionality
         const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
         assignButtons.forEach(button => {

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+    --primary-text: #000;
+    --secondary-text: #444;
+    --border-color: #ddd;
+    --background-color: #f7f7f7;
+    --white: #fff;
+    --button-bg: #1c1c1c;
+    --button-text: #fff;
+    --light-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(200, 230, 230, 0.8) 100%);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--white);
+    color: var(--primary-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    background-color: #FBF9F7;
+    border-bottom: 1px solid #eee;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.nav-link {
+    color: #333 !important;
+    margin: 0 1rem;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-icon {
+    width: 32px;
+    height: 32px;
+    background-color: #333;
+    border-radius: 50%;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    padding: 40px 20px;
+    position: relative;
+    margin: auto;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -80px;
+    bottom: 0;
+    width: 300px;
+    background: var(--light-gradient);
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 10px;
+}
+
+.search-bar-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.search-box {
+    flex-grow: 1;
+    max-width: 700px;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 15px;
+    background-color: var(--white);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-box i {
+    color: var(--secondary-text);
+    margin-right: 10px;
+    font-size: 1.1em;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    flex-grow: 1;
+    font-size: 1em;
+    background: none;
+}
+
+.upload-button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.upload-button:hover {
+    background-color: #333;
+}
+
+.list-section {
+    padding-top: 10px;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--secondary-text);
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 20px;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.1s ease;
+}
+
+.checkbox:checked {
+    background-color: var(--button-bg);
+    border-color: var(--button-bg);
+}
+
+.checkbox:checked::after {
+    content: "✔";
+    color: white;
+    font-size: 14px;
+    position: absolute;
+    top: 1px;
+    left: 4px;
+}
+
+.item-content {
+    display: flex;
+    align-items: center;
+}
+
+.placeholder-box {
+    width: 100px;
+    height: 50px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-right: 20px;
+    background-color: var(--white);
+    flex-shrink: 0;
+}
+
+.item-title {
+    font-size: 1em;
+    color: var(--primary-text);
+}
+
+.save-section {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 30px;
+}
+
+.save-button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 30px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.save-button:hover {
+    background-color: #333;
+}
+
+@media (max-width: 768px) {
+    .search-bar-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .upload-button {
+        width: 100%;
+    }
+}
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Logo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="class.html">Classes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+                </ul>
+                <div class="profile-section">
+                    <span>abhirajoat</span>
+                    <div class="profile-icon"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="search-bar-section">
+  <form action="/browse" method="get" class="d-flex w-100">
+    <div class="search-box flex-grow-1">
+      <i class="fa-solid fa-search"></i>
+      <input type="text" name="q" value="<%= query %>" placeholder="Search YouTube...">
+    </div>
+    <button type="submit" class="upload-button">Search</button>
+  </form>
+</div>
+
+
+        <div class="list-section">
+  <% if (videos && videos.length > 0) { %>
+    <% videos.forEach(video => { %>
+      <div class="list-item">
+        <input type="checkbox" class="checkbox">
+        <div class="item-content">
+          <div class="placeholder-box" style="background-image: url('<%= video.thumbnail %>'); background-size: cover; background-position: center;"></div>
+          <span class="item-title">
+            <a href="https://www.youtube.com/watch?v=<%= video.videoId %>" target="_blank" style="text-decoration:none; color:inherit;">
+              <%= video.title %> <br>
+              <small style="color:#777;"><%= video.channel %></small>
+            </a>
+          </span>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No videos available.</p>
+  <% } %>
+</div>
+
+
+        <div class="save-section">
+            <button class="save-button">Save</button>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
