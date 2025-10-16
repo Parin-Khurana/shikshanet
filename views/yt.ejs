@@ -270,12 +270,11 @@ body {
         <input type="checkbox" class="checkbox">
         <div class="item-content">
           <div class="placeholder-box" style="background-image: url('<%= video.thumbnail %>'); background-size: cover; background-position: center;"></div>
-          <span class="item-title">
-            <a href="https://www.youtube.com/watch?v=<%= video.videoId %>" target="_blank" style="text-decoration:none; color:inherit;">
-              <%= video.title %> <br>
-              <small style="color:#777;"><%= video.channel %></small>
-            </a>
-          </span>
+          <span class="item-title"><%= video.title %></span>
+        </div>
+        <div style="margin-left:auto;">
+          <!-- Download button prefilled with YouTube URL -->
+          <a class="save-button" href="<%= video.downloadUrl %>" target="_blank">Download</a>
         </div>
       </div>
     <% }) %>
@@ -283,6 +282,7 @@ body {
     <p>No videos available.</p>
   <% } %>
 </div>
+
 
 
         <div class="save-section">
