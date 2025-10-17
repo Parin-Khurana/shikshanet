@@ -2,25 +2,90 @@ const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const dotenv = require('dotenv');
-
+const Teacher = require('./models/teacher');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
+const mongoose = require('mongoose');
 dotenv.config();
-
+const JWT_SECRET = 'rishik@123';
 const app = express();
 
 // Set view engine and static folder
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+// For all routes, check if JWT exists
+// This must be above any route
+app.use((req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) {
+    res.locals.teacher = null;
+    return next();
+  }
 
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.locals.teacher = decoded; // now teacher.name is available
+  } catch (err) {
+    res.locals.teacher = null;
+  }
+  next();
+});
+
+app.get('/dash', (req, res) => {
+    if (!res.locals.teacher) {
+        return res.redirect('/login');
+    } else {   
+        console.log('Teacher in locals:', res.locals.teacher); 
+    
+    return res.render('dash', { teacher: res.locals.teacher})
+    } })  
 // Routes
 app.get('/', (req, res) => {
     res.render('dash'); // your main dashboard page
 });
+mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
+  .then(() => console.log('✅ Connected to MongoDB Atlas'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 app.get('/class', (req, res) => {
     res.render('class');
 });
+app.get('/login', (req, res) => {
+  res.render('login', { error: null });
+});
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
 
+  try {
+    const teacher = await Teacher.findOne({ email });
+    if (!teacher) return res.render('login', { error: 'User not found' });
+
+    if (teacher.password !== password)
+      return res.render('login', { error: 'Invalid password' });
+
+    // ✅ Include name and email in JWT payload
+    const token = jwt.sign(
+      { id: teacher._id, username: teacher.username, email: teacher.email,sections: teacher.sections }, // <-- added name
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    // Store token in cookie
+    res.cookie('token', token, { httpOnly: true });
+    res.redirect('/dash');
+  } catch (err) {
+    console.error(err);
+    res.render('login', { error: 'Server error' });
+  }
+});
+
+
+app.get('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/login');
+});
 // Browse route — fetch YouTube videos
 app.get("/browse", async (req, res) => {
     const query = req.query.q || "educational";

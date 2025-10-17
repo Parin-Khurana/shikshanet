@@ -352,9 +352,9 @@
                     <li class="nav-item"><a class="nav-link" href="#">home</a></li>
                 </ul>
                 <div class="profile-section">
-                    <span>abhirajoat</span>
-                    <div class="profile-icon"></div>
-                </div>
+    <span><%= teacher ? teacher.username : 'Guest' %></span>
+    <div class="profile-icon"></div>
+</div>
             </div>
         </div>
     </nav>
@@ -367,38 +367,60 @@
 
 
     <div class="stats-container">
-        <div class="row g-3">
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card blue">
-                    <div class="stat-label">Class</div>
-                    <div class="stat-value blue">IX<sub>B</sub></div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card orange">
-                    <div class="stat-icon orange"><i class="bi bi-book"></i></div>
-                    <div class="stat-label">Total Courses</div>
-                    <div class="stat-value">2</div>
-                    <div class="stat-subtext">1 completed</div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card green">
-                    <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
-                    <div class="stat-label">Completion Rate</div>
-                    <div class="stat-value">70%</div>
-                    <div class="stat-subtext">class average</div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="stat-card purple">
-                    <div class="stat-icon purple"><i class="bi bi-people"></i></div>
-                    <div class="stat-label">Active Students</div>
-                    <div class="stat-value">21</div>
+    <div class="row g-3">
+        <!-- Class Stats -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card blue">
+                <div class="stat-label">Class</div>
+                <div class="stat-value blue" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <% if (teacher && teacher.sections && teacher.sections.length) { %>
+                        <% teacher.sections.forEach(section => { %>
+                            <% 
+                                const parts = section.name.split(' '); 
+                            %>
+                            <div style="padding: 2px 6px; background: rgba(255,255,255,0.2); border-radius: 4px;">
+                                <%= parts[0] %><sub><%= parts[1] || '' %></sub>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div>No Sections Assigned</div>
+                    <% } %>
                 </div>
             </div>
         </div>
+
+        <!-- Total Courses -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card orange">
+                <div class="stat-icon orange"><i class="bi bi-book"></i></div>
+                <div class="stat-label">Total Courses</div>
+                <div class="stat-value">2</div>
+                <div class="stat-subtext">1 completed</div>
+            </div>
+        </div>
+
+        <!-- Completion Rate -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card green">
+                <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+                <div class="stat-label">Completion Rate</div>
+                <div class="stat-value">70%</div>
+                <div class="stat-subtext">class average</div>
+            </div>
+        </div>
+
+        <!-- Active Students -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card purple">
+                <div class="stat-icon purple"><i class="bi bi-people"></i></div>
+                <div class="stat-label">Active Students</div>
+                <div class="stat-value">21</div>
+            </div>
+        </div>
     </div>
+</div>
+
+
 
  
     <div class="content-section">
