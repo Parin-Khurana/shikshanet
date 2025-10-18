@@ -4,8 +4,8 @@ const path = require('path');
 const dotenv = require('dotenv');
 const Teacher = require('./models/teacher');
 const jwt = require('jsonwebtoken');
-const cors= require('cors');
-const fetch = require('node-fetch');
+
+
 const cookieParser = require('cookie-parser')
 const mongoose = require('mongoose');
 dotenv.config();
