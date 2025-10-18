@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tests</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Geist", sans-serif;
+  background-color: #fafafa;
+  color: #000000;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-link {
+  font-size: 14px;
+  color: #000000;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: #737373;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.username {
+  font-size: 14px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #000000;
+}
+
+.main {
+  padding: 32px 0;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 50px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.page-description {
+  color: #737373;
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  max-width: 1200px;
+  margin-bottom: 24px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.tab-button:hover {
+  background-color: #f5f5f5;
+}
+
+.tab-button.active {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  min-height: 600px;
+}
+
+.card-header {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.card-header-content {
+  flex: 1;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.card-description {
+  font-size: 14px;
+  color: #737373;
+}
+
+#create-tab .card {
+  height: 600px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 15px;
+  background-color: #ffffff;
+  transition: border-color 0.2s;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #000000;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #737373;
+  pointer-events: none;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 4L6 8L10 4' stroke='%23737373' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: none;
+  font-family: inherit;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.form-steps-container {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.form-step {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.form-step.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  position: relative;
+}
+
+.form-step.exit-left {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+.btn-back {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-back:hover {
+  background-color: #f5f5f5;
+  border-color: #d4d4d8;
+}
+
+.btn-back:active {
+  background-color: #e5e5e5;
+}
+
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.upload-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 0 1 auto;
+}
+
+.file-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-name-input {
+  flex: 1;
+}
+
+.btn-remove {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-remove:hover {
+  background-color: #f5f5f5;
+  border-color: #d4d4d8;
+}
+
+.drop-zone {
+  border: 2px dashed #d4d4d8;
+  border-radius: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 24px;
+  min-height: 270px;
+  flex: 1;
+}
+
+.btn {
+  padding: 8px 32px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: #000000;
+  color: #ffffff;
+  width: 180px;
+}
+
+.btn-primary:hover {
+  background-color: #262626;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #e5e5e5;
+  width: 180px;
+}
+
+.btn-secondary:hover {
+  background-color: #f5f5f5;
+}
+
+.placeholder-text {
+  color: #737373;
+}
+
+@media (max-width: 768px) {
+  .header-left {
+    gap: 24px;
+  }
+
+  .nav {
+    gap: 16px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    max-width: 100%;
+  }
+}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="logo">Logo</div>
+          <nav class="nav">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="class.html" class="nav-link">Classes</a>
+            <a href="test.html" class="nav-link">Tests</a>
+            <a href="yt.html" class="nav-link">Learn</a>
+          </nav>
+        </div>
+        <div class="header-right">
+          <span class="username">abhirajgoat</span>
+          <div class="avatar"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container">
+      <div class="page-header">
+        <h1 class="page-title">Tests</h1>
+        <p class="page-description">Create, upload, and assign tests to students.</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-button active" data-tab="create">Create</button>
+        <button class="tab-button" data-tab="upload">Upload</button>
+        <button class="tab-button" data-tab="assign">Assign</button>
+      </div>
+
+      <!-- ✅ CREATE TAB -->
+      <div id="create-tab" class="tab-content active">
+        <div class="card">
+          <div class="form-steps-container">
+            <div id="step-1" class="form-step active">
+              <div class="card-header">
+                <div class="card-header-content">
+                  <h2 class="card-title">Create Test</h2>
+                  <p class="card-description">Enter basic test details</p>
+                </div>
+              </div>
+              <form class="form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="label">Class</label>
+                    <select id="class-select" class="select">
+                      <option>Select a class</option>
+                      <option>Class 9A</option>
+                      <option>Class 9B</option>
+                      <option>Class 10</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="label">Due Date</label>
+                    <input type="text" id="due-date" class="input" placeholder="DD-MM-YYYY">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="label">Title</label>
+                  <input type="text" id="title" class="input" placeholder="Enter test title">
+                </div>
+                <div class="form-group">
+                  <label class="label">Description</label>
+                  <textarea id="description" class="textarea" placeholder="Enter test description"></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-primary" onclick="goToStep(2)">Next</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="step-2" class="form-step">
+              <div class="card-header">
+                <div class="card-header-content">
+                  <h2 class="card-title">Create Test</h2>
+                  <p class="card-description">Configure the details</p>
+                </div>
+                <button type="button" class="btn-back" onclick="goToStep(1)" title="Go back">
+                  ⬅️
+                </button>
+              </div>
+              <form class="form">
+                <div class="form-group">
+                  <label class="label">Topic</label>
+                  <select id="topic-select" class="select">
+                    <option>Mathematics</option>
+                    <option>Science</option>
+                    <option>English</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="label">Difficulty</label>
+                  <select id="difficulty-select" class="select">
+                    <option>Easy</option>
+                    <option>Medium</option>
+                    <option>Hard</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="label">No of Questions (1-50)</label>
+                  <input type="number" id="num-questions" class="input" placeholder="10" min="1" max="50">
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-primary" onclick="generateTest()">Download</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other tabs unchanged -->
+      <div id="upload-tab" class="tab-content"><div class="card"><p>Upload tab...</p></div></div>
+      <div id="assign-tab" class="tab-content"><div class="card"><p>Assign tab...</p></div></div>
+    </div>
+  </main>
+
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  const nothing = "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"
+
+  // tab switching
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const tabName = this.getAttribute('data-tab');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+        if (tabName === 'create') goToStep(1);
+      });
+    });
+  });
+
+  // step navigation
+  function goToStep(stepNumber) {
+    const steps = document.querySelectorAll('.form-step');
+    steps.forEach(step => step.classList.remove('active'));
+    document.getElementById('step-' + stepNumber).classList.add('active');
+  }
+
+  // generate test using Perplexity
+  async function generateTest() {
+    const classSelect = document.getElementById('class-select').value;
+    const dueDate = document.getElementById('due-date').value;
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const topic = document.getElementById('topic-select').value;
+    const difficulty = document.getElementById('difficulty-select').value;
+    const numQuestions = document.getElementById('num-questions').value;
+
+   const prompt = `
+Generate a ${difficulty} level test on the topic "${topic}" for ${classSelect}.
+It should have exactly ${numQuestions} questions.
+Include both objective and short-answer questions.
+Test title: ${title}
+Description: ${description}   <-- this line uses your description input
+Due Date: ${dueDate}
+Format each question clearly numbered.
+`;
+
+
+    alert("Generating your test... please wait!");
+
+    try {
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${nothing}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [
+            { role: "system", content: "You are a test generator for teachers." },
+            { role: "user", content: prompt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      let text = data?.choices?.[0]?.message?.content || "Error generating test.";
+
+      // formatting: extra line breaks & clean markdown
+      text = text
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/^(\d+)\./gm, '\n$1.'); // space before each question
+
+      // download as PDF
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = doc.splitTextToSize(text, 180);
+      doc.text(lines, 15, 15);
+      doc.save(`${title || "test"}.pdf`);
+
+    } catch (err) {
+      alert("Error generating test: " + err.message);
+    }
+  }
+</script>
+
+</body>
+</html>
