@@ -10,6 +10,8 @@ dotenv.config();
 const JWT_SECRET = 'rishik@123';
 const app = express();
 
+
+
 // Set view engine and static folder
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -80,7 +82,9 @@ app.post('/login', async (req, res) => {
     res.render('login', { error: 'Server error' });
   }
 });
-
+app.get('/test', (req, res) => {
+    res.render('test');
+});
 
 app.get('/logout', (req, res) => {
     res.clearCookie('token');
