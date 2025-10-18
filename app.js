@@ -4,14 +4,21 @@ const path = require('path');
 const dotenv = require('dotenv');
 const Teacher = require('./models/teacher');
 const jwt = require('jsonwebtoken');
+
+
 const cookieParser = require('cookie-parser')
 const mongoose = require('mongoose');
 dotenv.config();
-const JWT_SECRET = 'rishik@123';
+const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 
+<<<<<<< HEAD
 
 
+=======
+app.use(express.json());
+app.use(cors());
+>>>>>>> origin/main
 // Set view engine and static folder
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
