@@ -4,12 +4,16 @@ const path = require('path');
 const dotenv = require('dotenv');
 const Teacher = require('./models/teacher');
 const jwt = require('jsonwebtoken');
+const cors= require('cors');
+const fetch = require('node-fetch');
 const cookieParser = require('cookie-parser')
 const mongoose = require('mongoose');
 dotenv.config();
-const JWT_SECRET = 'rishik@123';
+const JWT_SECRET = process.env.JWT_SECRET;
 const app = express();
 
+app.use(express.json());
+app.use(cors());
 // Set view engine and static folder
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -80,7 +84,9 @@ app.post('/login', async (req, res) => {
     res.render('login', { error: 'Server error' });
   }
 });
-
+app.get('/test', (req, res) => {
+    res.render('test');
+});
 
 app.get('/logout', (req, res) => {
     res.clearCookie('token');
