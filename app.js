@@ -172,7 +172,7 @@ app.get('/logout', (req, res) => {
 // Browse route — fetch YouTube videos
 app.get("/browse", auth, async (req, res) => {
     const query = req.query.q || "educational";
-    const API_KEY = process.env.YOUTUBE_API_KEY;
+    const API_KEY =  "AIzaSyBGki6h-QZipjIDVEllmT1Wd1DMq1qoOv8";
     try {
         const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
             params: {
