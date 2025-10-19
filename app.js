@@ -138,7 +138,7 @@ app.post('/class', auth, async (req, res) => {
         return res.status(500).json({ error: "Error uploading or parsing file" });
     }
 });
-app.get('/test', (req, res) => {
+app.get('/test',auth,(req, res) => {
     res.render('test');
 });
 
