@@ -638,48 +638,201 @@ select, .date-input {
     </main>
 
     <script>
+const sectionsData = <%- JSON.stringify(teacher.sections) %>;
+const classSelect = document.getElementById("class-select");
+const studentsContainer = document.querySelector(".students-scroll");
+const uploadArea = document.querySelector('.upload-area');
 
-    // Responsive Navbar Toggle
-    
-  const sectionsData = <%- JSON.stringify(teacher.sections) %>;
-  const classSelect = document.getElementById("class-select");
-  const studentsContainer = document.querySelector(".students-scroll");
-document.addEventListener("DOMContentLoaded", function () { const materialSelect = document.getElementById("material-select"); const fileInput = document.getElementById("material-upload"); // Dropdown change event
- materialSelect.addEventListener("change", function () { const value = materialSelect.value; if (value === "browse") { window.location.href = "/browse";  } else if (value === "upload") { fileInput.click();  } });  fileInput.addEventListener("change", function () { const files = Array.from(fileInput.files); if (files.length === 0) return;  const existingOptions = Array.from(materialSelect.options).filter(opt => opt.classList.contains("uploaded-file")); existingOptions.forEach(opt => opt.remove());  files.forEach(file => { const option = document.createElement("option"); option.value = file.name; option.textContent = file.name; option.classList.add("uploaded-file");  materialSelect.appendChild(option); });  materialSelect.value = files[0].name; }); });  const assignButtons = document.querySelectorAll('.assignment-buttons .btn'); assignButtons.forEach(button => { button.addEventListener('click', function() { assignButtons.forEach(btn => { btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); }); this.classList.remove('btn-secondary'); this.classList.add('btn-primary'); }); });  const uploadArea = document.querySelector('.upload-area'); uploadArea.addEventListener('click', function() { alert('File upload clicked! In a real implementation, this would open a file picker.'); });  uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); this.style.borderColor = 'rgba(56, 78, 183, 0.6)'; }); uploadArea.addEventListener('dragleave', function(e) { e.preventDefault(); this.style.borderColor = 'rgba(56, 78, 183, 0.3)'; }); uploadArea.addEventListener('drop', function(e) { e.preventDefault(); this.style.borderColor = 'rgba(56, 78, 183, 0.3)'; console.log('Files dropped:', e.dataTransfer.files); }); const menuToggle = document.querySelector('.menu-toggle'); const nav = document.querySelector('nav'); menuToggle.addEventListener('click', () => { nav.classList.toggle('active'); });
-  function renderStudents(sectionIndex) {
+document.addEventListener("DOMContentLoaded", function () {
+    const materialSelect = document.getElementById("material-select");
+    const fileInput = document.getElementById("material-upload");
+
+    // Dropdown change event
+    materialSelect.addEventListener("change", function () {
+        const value = materialSelect.value;
+        if (value === "browse") {
+            window.location.href = "/browse";
+        } else if (value === "upload") {
+            fileInput.click();
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener("change", function () {
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) return;
+
+        // Remove previous uploaded options
+        const existingOptions = Array.from(materialSelect.options).filter(opt => opt.classList.contains("uploaded-file"));
+        existingOptions.forEach(opt => opt.remove());
+
+        // Add new options
+        files.forEach(file => {
+            const option = document.createElement("option");
+            option.value = file.name;
+            option.textContent = file.name;
+            option.classList.add("uploaded-file");
+            materialSelect.appendChild(option);
+        });
+
+        materialSelect.value = files[0].name;
+    });
+
+    // Assignment button toggle
+    const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
+    assignButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            assignButtons.forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            });
+            this.classList.remove('btn-secondary');
+            this.classList.add('btn-primary');
+        });
+    });
+
+    // Menu toggle
+    const menuToggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('nav');
+    menuToggle.addEventListener('click', () => {
+        nav.classList.toggle('active');
+    });
+});
+
+// ----- Section Rendering -----
+function renderStudents(sectionIndex) {
     const section = sectionsData[sectionIndex];
     studentsContainer.innerHTML = "";
 
     if (!section || !section.students.length) {
-      studentsContainer.innerHTML = "<p>No students found in this section</p>";
-      return;
+        studentsContainer.innerHTML = "<p>No students found in this section</p>";
+        return;
     }
 
     section.students.forEach(student => {
-      const div = document.createElement("div");
-      div.classList.add("attendance-card");
-      div.innerHTML = `
-        <div class="student-info">
-          <input type="checkbox" class="checkbox">
-          <div class="student-details">
-            <h3>${student.name}</h3>
-            <p>${student.phone}</p>
-          </div>
-        </div>
-        <span class="attendance-status status-present">Present</span>
-      `;
-      studentsContainer.appendChild(div);
+        const div = document.createElement("div");
+        div.classList.add("attendance-card");
+        div.innerHTML = `
+            <div class="student-info">
+                <input type="checkbox" class="checkbox">
+                <div class="student-details">
+                    <h3>${student.name}</h3>
+                    <p>${student.phone}</p>
+                </div>
+            </div>
+            <span class="attendance-status status-present">Present</span>
+        `;
+        studentsContainer.appendChild(div);
     });
-  }
+}
 
-  // Initially render first section
-  if (sectionsData.length) renderStudents(0);
+// Initially render first section
+if (sectionsData.length) renderStudents(0);
 
-  // Change students when dropdown changes
-  classSelect.addEventListener("change", () => {
+// Change students when dropdown changes
+classSelect.addEventListener("change", () => {
     renderStudents(classSelect.value);
-  });
+});
+
+// ----- Upload Area Logic -----
+uploadArea.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.png,.jpg,.jpeg,.pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/class', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                alert("OCR failed: " + data.error);
+                return;
+            }
+
+            // Populate students from OCR
+            populateStudents(data.students, data.date);
+        } catch (err) {
+            console.error(err);
+            alert("Error uploading or parsing file");
+        }
+    };
+    input.click();
+});
+
+// Drag & drop visual effects
+uploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'rgba(56, 78, 183, 0.6)';
+});
+uploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'rgba(56, 78, 183, 0.3)';
+});
+uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'rgba(56, 78, 183, 0.3)';
+    console.log('Files dropped:', e.dataTransfer.files);
+});
+
+// ----- Function to populate OCR students -----
+function populateStudents(students, date) {
+    studentsContainer.innerHTML = "";
+
+    let presentCount = 0;
+    let absentCount = 0;
+
+    students.forEach(student => {
+        const card = document.createElement('div');
+        card.classList.add('attendance-card');
+
+        const infoDiv = document.createElement('div');
+        infoDiv.classList.add('student-info');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.classList.add('checkbox');
+
+        const details = document.createElement('div');
+        details.classList.add('student-details');
+        details.innerHTML = `<h3>${student.name}</h3><p>${student.phone}</p>`;
+
+        infoDiv.appendChild(checkbox);
+        infoDiv.appendChild(details);
+
+        const status = document.createElement('span');
+        status.classList.add('attendance-status', student.status === "PRESENT" ? 'status-present' : 'status-absent');
+        status.textContent = student.status;
+
+        card.appendChild(infoDiv);
+        card.appendChild(status);
+
+        studentsContainer.appendChild(card);
+
+        if (student.status === "PRESENT") presentCount++;
+        else absentCount++;
+    });
+
+    // Update badge counts
+    const presentBadge = document.querySelector('.badge-present');
+    const absentBadge = document.querySelector('.badge-absent');
+    if (presentBadge) presentBadge.textContent = `Present : ${presentCount}`;
+    if (absentBadge) absentBadge.textContent = `Absent : ${absentCount}`;
+
+    // Update date
+    const dateElem = document.querySelector('.card .students-scroll')?.previousElementSibling?.querySelector('span');
+    if (dateElem) dateElem.textContent = date;
+}
 </script>
+
 
 </body>
 </html>
