@@ -629,7 +629,7 @@ select, .date-input {
                     <h2 class="card-title">Guidelines</h2>
                     <ul style="font-size: 14px; color: rgba(103, 103, 103, 1); line-height: 1.8; padding-left: 20px;">
                         <li>The image should be under 10mb</li>
-                        <li>It should be not blurred</li>
+                        <li>It should be not blurred</li>   
                         <li>Take the image from the top for clear image</li>
                     </ul>
                 </div>
@@ -638,10 +638,14 @@ select, .date-input {
     </main>
 
     <script>
+
+    // Responsive Navbar Toggle
+    
   const sectionsData = <%- JSON.stringify(teacher.sections) %>;
   const classSelect = document.getElementById("class-select");
   const studentsContainer = document.querySelector(".students-scroll");
-
+document.addEventListener("DOMContentLoaded", function () { const materialSelect = document.getElementById("material-select"); const fileInput = document.getElementById("material-upload"); // Dropdown change event
+ materialSelect.addEventListener("change", function () { const value = materialSelect.value; if (value === "browse") { window.location.href = "/browse";  } else if (value === "upload") { fileInput.click();  } });  fileInput.addEventListener("change", function () { const files = Array.from(fileInput.files); if (files.length === 0) return;  const existingOptions = Array.from(materialSelect.options).filter(opt => opt.classList.contains("uploaded-file")); existingOptions.forEach(opt => opt.remove());  files.forEach(file => { const option = document.createElement("option"); option.value = file.name; option.textContent = file.name; option.classList.add("uploaded-file");  materialSelect.appendChild(option); });  materialSelect.value = files[0].name; }); });  const assignButtons = document.querySelectorAll('.assignment-buttons .btn'); assignButtons.forEach(button => { button.addEventListener('click', function() { assignButtons.forEach(btn => { btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); }); this.classList.remove('btn-secondary'); this.classList.add('btn-primary'); }); });  const uploadArea = document.querySelector('.upload-area'); uploadArea.addEventListener('click', function() { alert('File upload clicked! In a real implementation, this would open a file picker.'); });  uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); this.style.borderColor = 'rgba(56, 78, 183, 0.6)'; }); uploadArea.addEventListener('dragleave', function(e) { e.preventDefault(); this.style.borderColor = 'rgba(56, 78, 183, 0.3)'; }); uploadArea.addEventListener('drop', function(e) { e.preventDefault(); this.style.borderColor = 'rgba(56, 78, 183, 0.3)'; console.log('Files dropped:', e.dataTransfer.files); }); const menuToggle = document.querySelector('.menu-toggle'); const nav = document.querySelector('nav'); menuToggle.addEventListener('click', () => { nav.classList.toggle('active'); });
   function renderStudents(sectionIndex) {
     const section = sectionsData[sectionIndex];
     studentsContainer.innerHTML = "";
