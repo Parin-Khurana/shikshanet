@@ -31,14 +31,14 @@ const auth = (req, res, next) => {
     const token = req.cookies.token;
     if (!token) {
         res.locals.teacher = null;
-        return res.redirect('/login');
+        const notAuth=true
     }
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         res.locals.teacher = decoded; // now teacher.name is available
     } catch (err) {
         res.locals.teacher = null;
-        return res.redirect('/login');
+        const notAuth=true
     }
     next();
 };
@@ -49,14 +49,16 @@ app.get('/dash', auth, (req, res) => {
     return res.render('dash', { teacher: res.locals.teacher });
 });
 
-app.get('/', auth, (req, res) => res.render('dash'));
+app.get('/',  (req, res) => res.render('land'));
 
 // --- CLASS ROUTE: GET for page, POST for OCR upload ---
 app.get('/class', auth, (req, res) => {
+    if (!res.locals.teacher) return res.redirect('/login');
     res.render('class', { teacher: res.locals.teacher, ocrStudents: null, ocrDate: null });
 });
 
 app.post('/class', auth, async (req, res) => {
+    if (!res.locals.teacher) return res.redirect('/login');
     try {
         // 1️⃣ Check file
         if (!req.files || !req.files.file) {
@@ -139,11 +141,15 @@ app.post('/class', auth, async (req, res) => {
     }
 });
 app.get('/test',auth,(req, res) => {
+    if (!res.locals.teacher) return res.redirect('/login');
     res.render('test');
 });
 
 // Login & Logout
-app.get('/login', (req, res) => res.render('login', { error: null }));
+app.get('/login', auth, (req, res) => {
+    if (res.locals.teacher) return res.redirect('/dash');
+    res.render('login', { error: null });
+});
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -173,6 +179,7 @@ app.get('/logout', (req, res) => {
 
 // Browse route — fetch YouTube videos
 app.get("/browse", auth, async (req, res) => {
+    if (!res.locals.teacher) return res.redirect('/login');
     const query = req.query.q || "educational";
     const API_KEY =  "AIzaSyBGki6h-QZipjIDVEllmT1Wd1DMq1qoOv8";
     try {

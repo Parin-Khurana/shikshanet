@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Transform Education — AI Powered Learning</title>
+
+  <!-- User requested "Geist" from Google Fonts.
+       If Geist is not available on Google Fonts the browser will fall back to the stack. -->
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Fallback to Inter / system sans if Geist isn't present -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+  --bg: #f8fbfc;
+  --card-bg: #ffffff;
+  --muted: #6b7280;
+  --accent: #6b8cff;
+  --accent-2: #a27bff;
+  --green: #6fe6bf;
+  --glass: rgba(255,255,255,0.7);
+
+  --radius-lg: 26px; /* Slightly Increased */
+  --radius-md: 18px; /* Slightly Increased */
+  --radius-sm: 12px; /* Slightly Increased */
+  --shadow-1: 0 14px 42px rgba(30,40,60,0.12); /* Increased intensity */
+  --shadow-2: 0 10px 30px rgba(30,40,60,0.1); /* Increased intensity */
+  --container: 1200px;
+  font-family: "Geist", "Inter", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+*{box-sizing:border-box}
+html,body{height:100% }
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(107,140,255,0.08), transparent 15%),
+    radial-gradient(1000px 550px at 90% 80%, rgba(106,230,200,0.08), transparent 15%),
+    var(--bg);
+  color:#0f172a;
+  line-height:1.6;
+  font-size:18px;
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+}
+
+.container{
+  width:95%; /* Adjusted back to 95% for maximum width */
+  max-width:var(--container);
+  margin:0 auto;
+  padding:60px 0;
+}
+
+/* Specific change for Hero width: 
+  We'll use a media query trick to reduce the left/right padding of the container 
+  only when it's inside the hero section, making the content use more screen width.
+  We are overriding the global .container padding-left/right here
+*/
+@media (min-width: 1400px) {
+  .hero > .container {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: 1300px; /* Stretch the hero container slightly more */
+    width: 90%;
+  }
+}
+
+
+.site-header{
+  background:var(--glass);
+  position:sticky;
+  top:0;
+  z-index:20;
+  backdrop-filter: blur(8px);
+}
+.header-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:24px 0;
+}
+.brand .pill{
+  display:inline-block;
+  font-size:15px; /* Slightly Increased */
+  padding:8px 14px; /* Slightly Increased */
+  background:rgba(255,255,255,0.7);
+  border-radius:999px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.logo{margin:0;font-size:26px;letter-spacing:0.5px} /* Slightly Increased */
+
+.nav .btn{margin-left:18px}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:15px 26px; /* Increased padding */
+  border-radius:16px; /* Increased radius */
+  text-decoration:none;
+  color:inherit;
+  font-weight:600;
+  background:transparent;
+  border:1px solid transparent;
+  font-size:19px; /* Increased font size */
+}
+.btn.ghost{background:transparent;border:1px solid rgba(12,18,30,0.08)}
+.btn.primary{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:white;
+  box-shadow:var(--shadow-2);
+}
+
+.hero{
+  min-height: calc(100vh - 96px);
+  padding-top:100px;
+  padding-bottom:80px;
+  height: 100%;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: flex-start;
+}
+.hero-grid{
+  display:grid;
+  grid-template-columns: 1fr 500px;
+  gap:60px;
+  align-items:start;
+}
+.hero-left .eyebrow{
+  color:var(--muted);
+  font-weight:700;
+  margin-bottom:16px;
+  display:inline-block;
+  font-size: 17px;
+}
+.hero-title{
+  margin:0 0 24px;
+  font-size:64px; /* Slightly Increased */
+  line-height:1;
+  max-width:800px;
+}
+.hero-desc{
+  color:var(--muted);
+  max-width:650px;
+  margin-bottom:30px;
+  font-size:21px; /* Slightly Increased */
+}
+.hero-cta{display:flex;gap:20px;margin-bottom:40px}
+.stats{list-style:none;padding:0;margin:0;display:flex;gap:40px}
+.stats li{font-size:19px;color:var(--muted)} /* Slightly Increased */
+.stats strong{display:block;color:#08122a;font-size:34px; margin-bottom: 4px;} /* Slightly Increased */
+
+.hero-right{
+  position:relative;
+}
+.badge{
+  position:absolute;
+  right:16px;
+  top:-8px;
+  background:#ff8b3d;
+  color:white;
+  padding:14px 20px; /* Slightly Increased */
+  border-radius:18px; /* Slightly Increased */
+  font-weight:700;
+  font-size:17px; /* Slightly Increased */
+  box-shadow:var(--shadow-2);
+}
+.pill-bottom{
+  position:absolute;
+  left:24px;
+  bottom:-24px;
+  background:#bda0ff;
+  color:white;
+  padding:14px 22px; /* Slightly Increased */
+  border-radius:18px; /* Slightly Increased */
+  font-weight:700;
+  font-size:17px; /* Slightly Increased */
+  box-shadow:var(--shadow-2);
+}
+.hero-card-illustration{
+  width:100%;
+  height:480px; /* Increased height */
+  border-radius:32px; /* Increased radius */
+  box-shadow:var(--shadow-1);
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#f7f8ff 0%,#f2fff9 100%);
+}
+
+.section{
+  min-height: 100vh;
+  padding: 120px 0; /* Increased padding for more zoom */
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.section--light{background:transparent}
+.section-header{text-align:center;margin-bottom:40px} /* Increased margin */
+.section-title{display:inline-block;background:var(--glass);padding:14px 28px;border-radius:20px;border:1px solid rgba(12,18,30,0.06);font-weight:600; font-size: 22px;} /* Increased padding/radius/size */
+.featured-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:50px;margin-top:50px} /* Increased gap and margin */
+
+.cards-grid{display:grid;gap:35px} /* Increased gap */
+.three-grid{grid-template-columns:repeat(3,1fr);margin-top:50px} /* Increased margin */
+
+.card{
+  background:var(--card-bg);
+  border-radius:28px; /* Increased radius */
+  padding:35px; /* Increased padding */
+  box-shadow:var(--shadow-2);
+  border:1px solid rgba(12,18,30,0.03);
+}
+.card small{color:var(--muted)}
+.card h4{margin:25px 0 15px; font-size: 26px;} /* Increased margin and size */
+.card p{color:var(--muted);margin:0 0 25px; font-size: 19px;} /* Increased margin and size */
+.card-list{margin:0 0 25px;padding-left:28px;color:var(--muted); font-size: 17px;}
+.card-link{color:var(--accent-2);font-weight:700;text-decoration:none; font-size: 19px;}
+
+.card.small{padding:30px;text-align:left} /* Increased padding */
+.small-illus{margin-bottom:20px} /* Increased margin */
+
+.centered-h3{text-align:center;margin:15px 0 18px;font-size:34px} /* Increased size */
+.section-sub{text-align:center;color:var(--muted);max-width:850px;margin:0 auto 35px; font-size: 21px;} /* Increased margin and size */
+
+.section--contact{
+  min-height: 100vh;
+  padding-top:80px;
+  padding-bottom:120px; /* Increased padding */
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.contact-grid{display:grid;grid-template-columns:1fr 500px;gap:60px;align-items:start} /* Increased illustration width and gap */
+.contact-left .eyebrow{display:inline-block;color:var(--muted);font-weight:700; font-size: 18px;}
+.contact-left h3{margin:20px 0 25px; font-size: 38px;} /* Increased margin and size */
+.contact-info{list-style:none;padding:0;margin:35px 0 0;color:var(--muted); font-size: 19px;} /* Increased margin and size */
+.contact-form{background:var(--card-bg);padding:40px;border-radius:24px;box-shadow:var(--shadow-2);border:1px solid rgba(12,18,30,0.03)} /* Increased padding/radius */
+.contact-form label{display:block;margin-bottom:25px} /* Increased margin */
+.contact-form input,
+.contact-form textarea{
+  width:100%;
+  padding:18px; /* Increased padding */
+  border-radius:16px; /* Increased radius */
+  border:1px solid rgba(12,18,30,0.08);
+  font-size:19px; /* Increased size */
+  outline:none;
+}
+.contact-form input:focus,
+.contact-form textarea:focus{box-shadow:0 6px 20px rgba(107,140,255,0.15);border-color:var(--accent)}
+.form-actions{display:flex;justify-content:flex-end;margin-top:25px} /* Increased margin */
+
+.site-footer{
+  background:#0b1220;
+  color:white;
+  padding:50px 0; /* Increased padding */
+  margin-top:0;
+  scroll-snap-align: end;
+}
+.footer-inner{display:flex;justify-content:space-between;align-items:center}
+.footer-inner .muted{opacity:0.7; font-size: 17px;}
+.footer-links a{color:rgba(255,255,255,0.85);text-decoration:none; font-size: 17px;}
+
+@media (max-width:1250px){
+  .hero-grid{grid-template-columns:1fr 440px}
+  .hero-right .hero-card-illustration{height:400px}
+}
+@media (max-width:1100px){
+  .hero-grid{grid-template-columns:1fr 380px}
+  .hero-right .hero-card-illustration{height:380px}
+}
+@media (max-width:900px){
+  .hero-grid{grid-template-columns:1fr;gap:30px}
+  .hero-right{order:2}
+  .featured-grid{grid-template-columns:1fr}
+  .three-grid{grid-template-columns:1fr}
+  .contact-grid{grid-template-columns:1fr}
+  .container{padding:40px 20px}
+  .centered-h3{font-size:32px}
+  .hero-title{font-size:52px}
+
+  .hero,
+  .section,
+  .section--contact {
+    min-height: auto;
+    scroll-snap-align: none;
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+  body {
+    scroll-snap-type: none;
+  }
+}
+@media (max-width:550px){
+  .hero-title{font-size:40px}
+  .hero-desc{font-size:17px}
+  .hero-card-illustration{height:300px}
+  .pill-bottom{display:none}
+  .badge{right:8px;padding:12px 16px; font-size: 15px;}
+  .btn{padding:14px 20px;font-size:17px}
+  .stats{gap:30px}
+  .stats strong{font-size:26px}
+  .centered-h3{font-size:28px}
+  .card h4{font-size: 22px;}
+  .card p{font-size: 17px;}
+  .card.small{padding:25px;}
+}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <span class="pill">PLATFORM OF EDUCATION</span>
+        <h1 class="logo">ShikshaNet</h1>
+      </div>
+      <nav class="nav">
+        <a class="btn ghost" href="#features">Features</a>
+        <a class="btn" href="#contact">Get started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-left">
+          <div class="eyebrow">Transform Education</div>
+          <h2 class="hero-title">Transform Education with AI-Powered Learning</h2>
+          <p class="hero-desc">
+            Connect teachers and students seamlessly. Manage classes, assignments, and progress with cutting-edge AI tools tailored for modern education.
+          </p>
+
+          <div class="hero-cta">
+            <a class="btn primary" href="#contact">Get started →</a>
+            <a class="btn ghost" href="/login">Login</a>
+          </div>
+
+          <ul class="stats">
+            <li><strong>67+</strong><span>active schools</span></li>
+            <li><strong>50+</strong><span>courses created</span></li>
+            <li><strong>50+</strong><span>schools enrolled</span></li>
+          </ul>
+        </div>
+
+        <div class="hero-right">
+          <div class="badge top-right">Interactive learning</div>
+
+          <div class="hero-card-illustration" aria-hidden="true">
+            <!-- Rounded placeholder area for main illustration -->
+            <svg viewBox="0 0 600 380" class="illus-svg" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0" stop-color="#f3f4ff"/>
+                  <stop offset="1" stop-color="#e6fff8"/>
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" rx="18" ry="18" width="100%" height="100%" fill="url(#g1)"></rect>
+            </svg>
+          </div>
+
+          <div class="pill-bottom">AI-powered tests</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED PROGRAMS -->
+    <section id="features" class="section section--light">
+      <div class="container">
+        <div class="section-header">
+          <h3 class="section-title">Featured Programs</h3>
+        </div>
+
+        <div class="cards-grid featured-grid">
+          <article class="card">
+            <div class="card-illustration">
+              <!-- simple illustrative svg -->
+              <svg viewBox="0 0 120 80" width="120" height="80" aria-hidden="true">
+                <rect x="4" y="6" rx="6" ry="6" width="112" height="60" fill="#eef6ff"/>
+                <rect x="12" y="16" width="88" height="28" rx="4" fill="#fff"/>
+                <rect x="18" y="22" width="28" height="12" rx="2" fill="#d1e9ff"/>
+              </svg>
+            </div>
+            <h4>Smart Class Management</h4>
+            <p>Organize your classroom, automate attendance, and manage lesson plans with AI assistance.</p>
+            <ul class="card-list">
+              <li>Auto grading</li>
+              <li>Attendance tracking</li>
+              <li>Lesson scheduler</li>
+            </ul>
+            <a class="card-link" href="#">Learn more →</a>
+          </article>
+
+          <article class="card">
+            <div class="card-illustration">
+              <svg viewBox="0 0 120 80" width="120" height="80" aria-hidden="true">
+                <rect x="0" y="0" rx="12" ry="12" width="120" height="80" fill="#fff0ff"/>
+                <circle cx="90" cy="30" r="16" fill="#ffd6f0"/>
+                <rect x="12" y="46" width="84" height="12" rx="4" fill="#ffd6f0"/>
+              </svg>
+            </div>
+            <h4>Personalized Learning Paths</h4>
+            <p>Create adaptive learning journeys for each student based on strengths, weaknesses and pace.</p>
+            <ul class="card-list">
+              <li>Adaptive exercises</li>
+              <li>Progress insights</li>
+              <li>Custom goals</li>
+            </ul>
+            <a class="card-link" href="#">Learn more →</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUILT FOR EVERYONE -->
+    <section class="section">
+      <div class="container">
+        <h3 class="centered-h3">Built for every one</h3>
+        <p class="section-sub">Comprehensive solutions designed specifically for teachers, students, and schools.</p>
+
+        <div class="cards-grid three-grid">
+          <article class="card small">
+            <div class="card-illustration small-illus">
+              <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true">
+                <rect x="6" y="6" rx="8" ry="8" width="68" height="68" fill="#eef7ff"/>
+                <path d="M18 50h44v4H18z" fill="#cde7ff"/>
+                <path d="M18 34h44v10H18z" fill="#fff"/>
+              </svg>
+            </div>
+            <h4>Teachers</h4>
+            <p>Streamline classroom management, auto grading and parent communication.</p>
+          </article>
+
+          <article class="card small">
+            <div class="card-illustration small-illus">
+              <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true">
+                <rect x="6" y="6" rx="8" ry="8" width="68" height="68" fill="#fff0fb"/>
+                <circle cx="40" cy="36" r="14" fill="#ffdff6"/>
+                <rect x="26" y="56" width="28" height="8" rx="4" fill="#ffdff6"/>
+              </svg>
+            </div>
+            <h4>Students</h4>
+            <p>Engaging content, personalized paths and progress tracking to keep learners motivated.</p>
+          </article>
+
+          <article class="card small">
+            <div class="card-illustration small-illus">
+              <svg viewBox="0 0 80 80" width="80" height="80" aria-hidden="true">
+                <rect x="6" y="6" rx="8" ry="8" width="68" height="68" fill="#e6fff8"/>
+                <path d="M18 44h44v16H18z" fill="#d7fff0"/>
+                <path d="M24 50h8v6h-8zM48 50h8v6h-8z" fill="#bfffe0"/>
+              </svg>
+            </div>
+            <h4>Schools</h4>
+            <p>Scalable deployments, reporting and compliance features for institutions.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section section--contact">
+      <div class="container contact-grid">
+        <div class="contact-left">
+          <span class="eyebrow">Get in touch</span>
+          <h3>Ready to Transform</h3>
+          <p>Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+
+          <ul class="contact-info">
+            <li><strong>Email</strong><br>hello@shikshanet.com</li>
+            <li><strong>Phone</strong><br>+91 9876543210</li>
+            <li><strong>Socials</strong><br>Twitter · LinkedIn · FB</li>
+          </ul>
+        </div>
+
+        <form class="contact-form" action="#" method="post" onsubmit="event.preventDefault(); alert('Message sent (demo)')">
+          <label>
+            <span class="label-text">Name</span>
+            <input type="text" name="name" placeholder="Your name" required>
+          </label>
+
+          <label>
+            <span class="label-text">Email</span>
+            <input type="email" name="email" placeholder="you@domain.com" required>
+          </label>
+
+          <label>
+            <span class="label-text">Message</span>
+            <textarea name="message" rows="5" placeholder="How can we help?" required></textarea>
+          </label>
+
+          <div class="form-actions">
+            <button class="btn primary" type="submit">Send message</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="brand small">
+        <h4>ShikshaNet</h4>
+        <p class="muted">© ShikshaNet all right reserved</p>
+      </div>
+      <div class="footer-links muted">
+        <a href="#">Privacy</a> · <a href="#">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
