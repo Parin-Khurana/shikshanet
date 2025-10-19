@@ -470,11 +470,10 @@ select, .date-input {
                         <div class="form-group">
                             <label for="class-select">Classes</label>
                             <select id="class-select">
-                                <option value="9B">9B</option>
-                                <option value="9A">9A</option>
-                                <option value="10A">10A</option>
-                                <option value="10B">10B</option>
-                            </select>
+  <% teacher.sections.forEach((section, index) => { %>
+    <option value="<%= index %>"><%=section.name%></option>
+  <% }) %>
+</select>
                         </div>
 
                         <div class="form-group">
@@ -639,87 +638,44 @@ select, .date-input {
     </main>
 
     <script>
-       document.addEventListener("DOMContentLoaded", function () {
-    const materialSelect = document.getElementById("material-select");
-    const fileInput = document.getElementById("material-upload");
+  const sectionsData = <%- JSON.stringify(teacher.sections) %>;
+  const classSelect = document.getElementById("class-select");
+  const studentsContainer = document.querySelector(".students-scroll");
 
-    // Dropdown change event
-    materialSelect.addEventListener("change", function () {
-        const value = materialSelect.value;
+  function renderStudents(sectionIndex) {
+    const section = sectionsData[sectionIndex];
+    studentsContainer.innerHTML = "";
 
-        if (value === "browse") {
-            window.location.href = "/browse"; // Open browse page
-        } else if (value === "upload") {
-            fileInput.click(); // Open file picker
-        }
+    if (!section || !section.students.length) {
+      studentsContainer.innerHTML = "<p>No students found in this section</p>";
+      return;
+    }
+
+    section.students.forEach(student => {
+      const div = document.createElement("div");
+      div.classList.add("attendance-card");
+      div.innerHTML = `
+        <div class="student-info">
+          <input type="checkbox" class="checkbox">
+          <div class="student-details">
+            <h3>${student.name}</h3>
+            <p>${student.phone}</p>
+          </div>
+        </div>
+        <span class="attendance-status status-present">Present</span>
+      `;
+      studentsContainer.appendChild(div);
     });
+  }
 
-    // File input change event
-    fileInput.addEventListener("change", function () {
-        const files = Array.from(fileInput.files);
-        if (files.length === 0) return;
+  // Initially render first section
+  if (sectionsData.length) renderStudents(0);
 
-        // Remove previously uploaded file options
-        const existingOptions = Array.from(materialSelect.options).filter(opt => opt.classList.contains("uploaded-file"));
-        existingOptions.forEach(opt => opt.remove());
+  // Change students when dropdown changes
+  classSelect.addEventListener("change", () => {
+    renderStudents(classSelect.value);
+  });
+</script>
 
-        // Append each uploaded file as a new option
-        files.forEach(file => {
-            const option = document.createElement("option");
-            option.value = file.name;
-            option.textContent = file.name;
-            option.classList.add("uploaded-file"); // mark as dynamically added
-            materialSelect.appendChild(option);
-        });
-
-        // Select first uploaded file automatically
-        materialSelect.value = files[0].name;
-    });
-});
-        // Button toggle functionality
-        const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
-        assignButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                assignButtons.forEach(btn => {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-secondary');
-                });
-                this.classList.remove('btn-secondary');
-                this.classList.add('btn-primary');
-            });
-        });
-
-        // Upload area click handler
-        const uploadArea = document.querySelector('.upload-area');
-        uploadArea.addEventListener('click', function() {
-            alert('File upload clicked! In a real implementation, this would open a file picker.');
-        });
-
-        // Drag and drop styling
-        uploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.style.borderColor = 'rgba(56, 78, 183, 0.6)';
-        });
-
-        uploadArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            this.style.borderColor = 'rgba(56, 78, 183, 0.3)';
-        });
-
-        uploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.style.borderColor = 'rgba(56, 78, 183, 0.3)';
-            console.log('Files dropped:', e.dataTransfer.files);
-        });
-
-    const menuToggle = document.querySelector('.menu-toggle');
-    const nav = document.querySelector('nav');
-
-    menuToggle.addEventListener('click', () => {
-        nav.classList.toggle('active');
-    });
-
-
-    </script>
 </body>
 </html>

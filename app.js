@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 
 const cookieParser = require('cookie-parser')
 const mongoose = require('mongoose');
+const teacher = require('./models/teacher');
 dotenv.config();
 const JWT_SECRET = "rishik@123";
 const app = express();
@@ -20,11 +21,12 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 // For all routes, check if JWT exists
 // This must be above any route
-app.use((req, res, next) => {
+ const auth =(req, res, next) => {
   const token = req.cookies.token;
   if (!token) {
     res.locals.teacher = null;
-    return next();
+    res.redirect('/login');
+    ;
   }
 
   try {
@@ -32,11 +34,13 @@ app.use((req, res, next) => {
     res.locals.teacher = decoded; // now teacher.name is available
   } catch (err) {
     res.locals.teacher = null;
+    res.redirect('/login');
+    ;
   }
   next();
-});
+};
 
-app.get('/dash', (req, res) => {
+app.get('/dash', auth, (req, res) => {
     if (!res.locals.teacher) {
         return res.redirect('/login');
     } else {   
@@ -45,16 +49,22 @@ app.get('/dash', (req, res) => {
     return res.render('dash', { teacher: res.locals.teacher})
     } })  
 // Routes
-app.get('/', (req, res) => {
+app.get('/',auth, (req, res) => {
     res.render('dash'); // your main dashboard page
 });
 mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-app.get('/class', (req, res) => {
-    res.render('class');
+app.get('/class',auth, (req, res) => {
+  
+  console.log('Teacher in locals for classes:', res.locals.teacher.sections[0]);
+  res.render('class', {
+    teacher: res.locals.teacher
+  });
 });
+
+
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
@@ -83,7 +93,7 @@ app.post('/login', async (req, res) => {
     res.render('login', { error: 'Server error' });
   }
 });
-app.get('/test', (req, res) => {
+app.get('/test',auth, (req, res) => {
     res.render('test');
 });
 
@@ -92,7 +102,7 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 // Browse route — fetch YouTube videos
-app.get("/browse", async (req, res) => {
+app.get("/browse",auth, async (req, res) => {
     const query = req.query.q || "educational";
     const API_KEY = process.env.YOUTUBE_API_KEY || "AIzaSyBGki6h-QZipjIDVEllmT1Wd1DMq1qoOv8";
 
