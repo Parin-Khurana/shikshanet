@@ -637,7 +637,7 @@ select, .date-input {
         </div>
     </main>
 
-    <script>
+   <script>
 const sectionsData = <%- JSON.stringify(teacher.sections) %>;
 const classSelect = document.getElementById("class-select");
 const studentsContainer = document.querySelector(".students-scroll");
@@ -688,6 +688,11 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             this.classList.remove('btn-secondary');
             this.classList.add('btn-primary');
+
+            // If "Assign to whole class" clicked
+            if (this.textContent.includes("whole class")) {
+                sendToWholeClass(classSelect.value);
+            }
         });
     });
 
@@ -831,7 +836,32 @@ function populateStudents(students, date) {
     const dateElem = document.querySelector('.card .students-scroll')?.previousElementSibling?.querySelector('span');
     if (dateElem) dateElem.textContent = date;
 }
+
+// ----- Send SMS to whole class -----
+async function sendToWholeClass(sectionIndex) {
+    const section = sectionsData[sectionIndex];
+    if (!section || !section.students.length) return;
+
+    const phones = section.students.map(s => s.phone);
+
+    try {
+        const res = await fetch('/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipients: phones, message: "Hi! You have a new material assigned." })
+        });
+        const data = await res.json();
+        if (data.success) alert("Messages sent successfully!");
+        else alert("Some messages could not be sent: " + (data.failed || []).join(", "));
+    } catch (err) {
+        console.error("Error sending SMS:", err);
+        alert("Error sending SMS. Check console for details.");
+    }
+}
 </script>
+
+
+
 
 
 </body>
