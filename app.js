@@ -6,21 +6,24 @@ const Teacher = require('./models/teacher');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
+const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-
+const accountSid = "ACf691596e7aa4f6b1e86b8928ca1d3464";
+const authToken  = "cf534d9d88d6e5451d6809eefa27e65b";
+const twilioNumber = "+12293982958"; // your twilio number
 dotenv.config();
 const JWT_SECRET = "rishik@123";
 const app = express();
-
+const client = twilio(accountSid, authToken)
 // Set view engine and static folder
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload()); // for file uploads
-
+app.use(express.json())
 // Connect MongoDB
 mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
@@ -210,6 +213,93 @@ app.get("/browse", auth, async (req, res) => {
         res.render("yt", { videos: [], query, error: "Failed to fetch YouTube data" });
     }
 });
+// --- Twilio SMS endpoint (hardcoded creds for local testing) ---
+app.post('/absentees/sms', auth, async (req, res) => {
+  try {
+    // <<--- PUT YOUR TWILIO CREDENTIALS HERE (local testing only) --->
+    
+
+    const twilioClient = require('twilio')(accountSid, authToken);
+
+    const { to, body, materialUrl } = req.body;
+    const recipients = Array.isArray(to) ? to : [];
+
+    if (!recipients.length) return res.status(400).json({ error: 'No recipients provided' });
+
+    const messageText = `${body || 'New class material:'}${materialUrl ? '\n' + materialUrl : ''}`;
+
+    const results = await Promise.allSettled(
+      recipients.map(number =>
+        twilioClient.messages.create({ from: fromNumber, to: number, body: messageText })
+      )
+    );
+
+    const details = results.map((r, i) => ({
+      number: recipients[i],
+      status: r.status,
+      error: r.status === 'rejected' ? (r.reason?.message || String(r.reason)) : null
+    }));
+
+    const sent = details.filter(d => d.status === 'fulfilled').length;
+    const failed = details.length - sent;
+
+    return res.json({ success: true, sent, failed, details });
+  } catch (err) {
+    console.error('Twilio SMS error:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+// add near top: ensure public/uploads is served (you already have express.static('public'))
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+app.post("/send-sms", async (req, res) => {
+  const { recipients, message } = req.body;
+
+  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+    return res.status(400).json({ error: "No recipients provided" });
+  }
+
+  const failedNumbers = [];
+
+  for (const phone of recipients) {
+    try {
+      await client.messages.create({
+        body: message,
+        from: twilioNumber,
+        to: phone, // must be a verified number if in trial
+      });
+    } catch (err) {
+      console.error("Failed to send to", phone, err.message);
+      failedNumbers.push(phone);
+    }
+  }
+
+  if (failedNumbers.length === 0) {
+    return res.json({ success: true });
+  } else {
+    return res.json({ success: false, failed: failedNumbers });
+  }
+});
+app.post('/upload-material', auth, async (req, res) => {
+  try {
+    if (!req.files || !req.files.file) return res.status(400).json({ error: 'No file' });
+
+    const file = req.files.file;
+    // sanitize filename (basic)
+    const safeName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const dest = path.join(uploadsDir, safeName);
+    await file.mv(dest);
+
+    // public URL (served via express.static on /public)
+    const url = `${req.protocol}://${req.get('host')}/uploads/${safeName}`;
+    return res.json({ url });
+  } catch (err) {
+    console.error('Upload error:', err);
+    return res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
 
 // Start server
 const PORT = process.env.PORT || 3000;
