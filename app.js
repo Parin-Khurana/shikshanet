@@ -14,7 +14,7 @@ const fileUpload = require('express-fileupload');
 dotenv.config();
 
 const accountSid = "ACde171f7238c5b9e81626f8c87bf570ef";
-const authToken  = "e0573e8117cfc92f4470cd589e00bc6a";
+const authToken  = "8c32f525b13f012975bd09a6d5c23631";
 const twilioNumber = "+19786446908"; 
 const JWT_SECRET = "rishik@123";
 
