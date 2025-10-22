@@ -10,49 +10,145 @@ const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-const accountSid = "ACf691596e7aa4f6b1e86b8928ca1d3464";
-const authToken  = "cf534d9d88d6e5451d6809eefa27e65b";
-const twilioNumber = "+12293982958"; // your twilio number
+
 dotenv.config();
+
+const accountSid = "ACde171f7238c5b9e81626f8c87bf570ef";
+const authToken  = "e0573e8117cfc92f4470cd589e00bc6a";
+const twilioNumber = "+19786446908"; 
 const JWT_SECRET = "rishik@123";
+
 const app = express();
-const client = twilio(accountSid, authToken)
-// Set view engine and static folder
+const client = twilio(accountSid, authToken);
+
+// --- Setup ---
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(fileUpload()); // for file uploads
-app.use(express.json())
-// Connect MongoDB
+app.use(fileUpload());
+app.use(express.json());
+
+// --- Serve uploads folder publicly ---
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+
+// --- MongoDB Connection ---
 mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// JWT auth middleware
+// --- JWT Auth Middleware ---
 const auth = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) {
-        res.locals.teacher = null;
-        const notAuth=true
-    }
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        res.locals.teacher = decoded; // now teacher.name is available
-    } catch (err) {
-        res.locals.teacher = null;
-        const notAuth=true
-    }
-    next();
+  const token = req.cookies.token;
+  if (!token) {
+    res.locals.teacher = null;
+    return next();
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.locals.teacher = decoded;
+  } catch (err) {
+    res.locals.teacher = null;
+  }
+  next();
 };
 
-// Routes
+// --- ROUTES ---
+
 app.get('/dash', auth, (req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    return res.render('dash', { teacher: res.locals.teacher });
+  if (!res.locals.teacher) return res.redirect('/login');
+  res.render('dash', { teacher: res.locals.teacher });
 });
 
-app.get('/',  (req, res) => res.render('land'));
+app.get('/', (req, res) => res.render('land'));
+
+// ✅ UPLOAD PAGE (HTML + JS)
+app.get('/upload', auth, (req, res) => {
+  if (!res.locals.teacher) return res.redirect('/login');
+  res.send(`<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Upload</title>
+    <style>
+      body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+      .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+      button { background: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+      button:hover { background: #0056b3; }
+      .message { margin-top: 20px; text-align: center; padding: 15px; border-radius: 5px; }
+      .success { background: #d4edda; color: #155724; }
+      .error { background: #f8d7da; color: #721c24; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📄 PDF Upload</h1>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <label for="pdfFile">Select PDF File:</label>
+        <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" required />
+        <button type="submit">Upload PDF</button>
+      </form>
+      <div id="message"></div>
+    </div>
+    <script>
+      document.querySelector('#uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const messageDiv = document.getElementById('message');
+        try {
+          messageDiv.innerHTML = '<div class="message">Uploading...</div>';
+          const response = await fetch('/upload', { method: 'POST', body: formData });
+          const result = await response.json();
+          if (result.success) {
+            messageDiv.innerHTML = \`<div class="message success">✅ Uploaded! <a href="\${result.url}" target="_blank">View PDF</a></div>\`;
+          } else {
+            messageDiv.innerHTML = \`<div class="message error">❌ \${result.error}</div>\`;
+          }
+        } catch (error) {
+          messageDiv.innerHTML = \`<div class="message error">❌ Upload failed: \${error.message}</div>\`;
+        }
+      });
+    </script>
+  </body>
+  </html>`);
+});
+
+// ✅ FILE UPLOAD HANDLER
+app.post('/upload', async (req, res) => {
+    try {
+        // make sure file exists
+        if (!req.files || !req.files.file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
+        const file = req.files.file;
+
+        // allow only PDFs for safety
+        if (file.mimetype !== 'application/pdf') {
+            return res.status(400).json({ success: false, error: 'Only PDF files are allowed' });
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            return res.status(400).json({ success: false, error: 'File too large (max 10MB)' });
+        }
+
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `${timestamp}-${safeName}`;
+        const filePath = path.join(uploadsDir, fileName);
+
+        await file.mv(filePath);
+
+        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
+        return res.json({ success: true, fileUrl });
+    } catch (err) {
+        console.error('Upload error:', err);
+        res.status(500).json({ success: false, error: 'Server error during upload' });
+    }
+});
 
 // --- CLASS ROUTE: GET for page, POST for OCR upload ---
 app.get('/class', auth, (req, res) => {
@@ -250,8 +346,7 @@ app.post('/absentees/sms', auth, async (req, res) => {
   }
 });
 // add near top: ensure public/uploads is served (you already have express.static('public'))
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
 
 app.post("/send-sms", async (req, res) => {
   const { recipients, message } = req.body;
@@ -264,6 +359,7 @@ app.post("/send-sms", async (req, res) => {
 
   for (const phone of recipients) {
     try {
+      console.log(message)
       await client.messages.create({
         body: message,
         from: twilioNumber,
@@ -281,24 +377,7 @@ app.post("/send-sms", async (req, res) => {
     return res.json({ success: false, failed: failedNumbers });
   }
 });
-app.post('/upload-material', auth, async (req, res) => {
-  try {
-    if (!req.files || !req.files.file) return res.status(400).json({ error: 'No file' });
 
-    const file = req.files.file;
-    // sanitize filename (basic)
-    const safeName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const dest = path.join(uploadsDir, safeName);
-    await file.mv(dest);
-
-    // public URL (served via express.static on /public)
-    const url = `${req.protocol}://${req.get('host')}/uploads/${safeName}`;
-    return res.json({ url });
-  } catch (err) {
-    console.error('Upload error:', err);
-    return res.status(500).json({ error: 'Upload failed' });
-  }
-});
 
 
 // Start server

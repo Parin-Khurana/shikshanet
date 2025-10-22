@@ -679,22 +679,80 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Assignment button toggle
-    const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
-    assignButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            assignButtons.forEach(btn => {
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-secondary');
-            });
-            this.classList.remove('btn-secondary');
-            this.classList.add('btn-primary');
-
-            // If "Assign to whole class" clicked
-            if (this.textContent.includes("whole class")) {
-                sendToWholeClass(classSelect.value);
-            }
+    // Assignment button toggle + send material logic
+const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
+assignButtons.forEach(button => {
+    button.addEventListener('click', async function () {
+        assignButtons.forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-secondary');
         });
+        this.classList.remove('btn-secondary');
+        this.classList.add('btn-primary');
+
+        // 1️⃣ Get selected section
+        const sectionIndex = classSelect.value;
+        const section = sectionsData[sectionIndex];
+        if (!section || !section.students.length) {
+            alert("No students in this class!");
+            return;
+        }
+
+        // 2️⃣ Get selected file name
+        const materialSelect = document.getElementById("material-select");
+        const fileName = materialSelect.value;
+        const fileInput = document.getElementById("material-upload");
+
+        let fileUrl = "";
+
+        // 3️⃣ If "upload" file exists locally, upload it first
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            fileUrl = await uploadMaterial(file);
+            if (!fileUrl) {
+                alert("File upload failed!");
+                return;
+            }
+        } else if (fileName && !["", "browse", "upload"].includes(fileName)) {
+            // Already uploaded material name (optional)
+            fileUrl = `/uploads/${fileName}`;
+        } else {
+            alert("Please select or upload a material first!");
+            return;
+        }
+
+        // 4️⃣ Prepare recipients
+        const recipients =
+            this.textContent.includes("whole class")
+                ? section.students.map(s => s.phone)
+                : section.students
+                    .filter(s => s.status === "ABSENT")
+                    .map(s => s.phone);
+
+        if (!recipients.length) {
+            alert("No recipients found!");
+            return;
+        }
+
+        // 5️⃣ Send SMS via backend
+        try {
+            const res = await fetch("/send-sms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recipients,
+                    message: `Hi! A new material has been assigned to you. View it here: ${fileUrl}`
+                }),
+            });
+            const data = await res.json();
+            if (data.success) alert("SMS sent successfully!");
+            else alert("Some messages failed.");
+        } catch (err) {
+            console.error("Error sending SMS:", err);
+            alert("Error sending SMS. Check console for details.");
+        }
     });
+});
 
     // Menu toggle
     const menuToggle = document.querySelector('.menu-toggle');
@@ -789,6 +847,28 @@ uploadArea.addEventListener('drop', function(e) {
 });
 
 // ----- Function to populate OCR students -----
+async function uploadMaterial(file) {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await res.json();
+
+        if (data.fileUrl) {
+            return data.fileUrl; // ✅ use this URL in SMS
+        } else {
+            console.error("Upload error:", data);
+            return null;
+        }
+    } catch (err) {
+        console.error("Upload failed:", err);
+        return null;
+    }
+}
 function populateStudents(students, date) {
     studentsContainer.innerHTML = "";
 
