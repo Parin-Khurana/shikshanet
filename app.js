@@ -1,306 +1,948 @@
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-const dotenv = require('dotenv');
-const Teacher = require('./models/teacher');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
-const mongoose = require('mongoose');
-const twilio = require('twilio');
-const fs = require('fs');
-const FormData = require('form-data');
-const fileUpload = require('express-fileupload');
-const accountSid = "ACf691596e7aa4f6b1e86b8928ca1d3464";
-const authToken  = "cf534d9d88d6e5451d6809eefa27e65b";
-const twilioNumber = "+12293982958"; // your twilio number
-dotenv.config();
-const JWT_SECRET = "rishik@123";
-const app = express();
-const client = twilio(accountSid, authToken)
-// Set view engine and static folder
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
-app.use(fileUpload()); // for file uploads
-app.use(express.json())
-// Connect MongoDB
-mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
-  .then(() => console.log('✅ Connected to MongoDB Atlas'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classes - Attendance Management</title>
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
 
-// JWT auth middleware
-const auth = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) {
-        res.locals.teacher = null;
-        const notAuth=true
-    }
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        res.locals.teacher = decoded; // now teacher.name is available
-    } catch (err) {
-        res.locals.teacher = null;
-        const notAuth=true
-    }
-    next();
-};
-
-// Routes
-app.get('/dash', auth, (req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    return res.render('dash', { teacher: res.locals.teacher });
-});
-
-app.get('/',  (req, res) => res.render('land'));
-
-// --- CLASS ROUTE: GET for page, POST for OCR upload ---
-app.get('/class', auth, (req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    res.render('class', { teacher: res.locals.teacher, ocrStudents: null, ocrDate: null });
-});
-
-app.post('/class', auth, async (req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    try {
-        // 1️⃣ Check file
-        if (!req.files || !req.files.file) {
-            return res.status(400).json({ error: "No file uploaded" });
+    <style>
+         @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        const file = req.files.file;
-
-        // Optional: limit file size to 2MB
-        if (file.size > 2 * 1024 * 1024) {
-            return res.status(400).json({ error: "File too large. Max 2MB allowed." });
+        body {
+            font-family: "Geist", sans-serif;
+            background-color: rgba(251, 249, 247, 1);
+            overflow-x: hidden;
         }
 
-        const uploadsDir = path.join(__dirname, 'uploads');
-        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-        const filePath = path.join(uploadsDir, file.name);
 
-        // 2️⃣ Save temporary file
-        await file.mv(filePath);
 
-        // 3️⃣ Read file as base64
-        const fileBase64 = fs.readFileSync(filePath, { encoding: 'base64' });
-        const mimeType = file.mimetype.includes("jpeg") ? "image/jpeg" : "image/png";
-
-        // 4️⃣ Prepare OCR.Space form
-        const formData = new FormData();
-        formData.append("base64Image", `data:${mimeType};base64,${fileBase64}`);
-        formData.append("language", "eng");      // English
-        formData.append("isTable", "true");      // Try table parsing
-        formData.append("OCREngine", "2");       // Best engine for tables
-
-        const apiKey = "K88514538288957"; // Your OCR.Space API key
-
-        // 5️⃣ Send request
-        const ocrRes = await axios.post("https://api.ocr.space/parse/image", formData, {
-            headers: { ...formData.getHeaders(), apikey: apiKey },
-            timeout: 30000  // 30s timeout
-        });
-
-        const ocrData = ocrRes.data;
-
-        // 6️⃣ Debug logs
-        console.log("OCR Response:", JSON.stringify(ocrData, null, 2));
-
-        // 7️⃣ Check errors from OCR.Space
-        if (ocrData.IsErroredOnProcessing) {
-            return res.status(500).json({ error: ocrData.ErrorMessage || "OCR processing failed" });
+        
+        /* Header Styles */
+        header {
+            background-color: rgba(254, 254, 255, 0.2);
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 100px;
+            padding: 11px 69px;
+            max-width: 1950px;
         }
 
-        if (!ocrData.ParsedResults || !ocrData.ParsedResults.length) {
-            return res.status(500).json({ error: "No text detected by OCR" });
+        .logo {
+            font-size: 32px;
+            font-weight: 600;
+            color: black;
+            flex-grow: 1;
         }
 
-        // 8️⃣ Parse students from text
-        const text = ocrData.ParsedResults[0].ParsedText;
-        const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+        nav {
+            display: flex;
+            align-items: center;
+            width: 200%;
+            gap: 0px;
+            font-size: 20px;
+        }
 
-        const ocrStudents = [];
-        lines.forEach(line => {
-            const cols = line.split(/\t|\|| {2,}/).map(c => c.trim()).filter(c => c.length > 0);
-            if (cols.length >= 2) {
-                const name = cols[0] || "Unknown";
-                const phoneOrClass = cols[1] || "";
-                const statusRaw = cols[cols.length - 1] || "";
-                const status = ["P", "PRESENT"].includes(statusRaw.toUpperCase()) ? "PRESENT" : "ABSENT";
+        nav a {
+            margin-left: 200px;
+            color: black;
+            text-decoration: none;
+        }
 
-                ocrStudents.push({ name, phone: phoneOrClass, status });
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: black;
+            border-radius: 50%;
+        }
+
+        /* Main Content */
+        main {
+            padding: 34px 55px 0;
+        }
+
+        .page-title {
+            font-size: 64px;
+            font-weight: 600;
+            color: rgba(9, 6, 7, 1);
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: black;
+            letter-spacing: -0.64px;
+            margin-top: 4px;
+        }
+
+        .content-grid {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .left-column {
+            width: 67%;
+        }
+
+        .right-column {
+            width: 33%;
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: white;
+            box-shadow: 0px 3px 4px -2px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            padding: 32px 40px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {   
+            font-size: 20px;
+            font-weight: 500;
+            color: black;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 16px;
+            color: black;
+            letter-spacing: -0.64px;
+            margin-bottom: 39px;
+        }
+
+        /* Form Styles */
+        label {
+            display: block;
+            font-size: 20px;
+            font-weight: 500;
+            color: black;
+            letter-spacing: -0.4px;
+            margin-bottom: 4px;
+        }
+select, .date-input {
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0px 3px 3px -2px rgba(0, 0, 0, 0.25);
+    border: 1px solid black;
+    border-radius: 12px;
+    padding: 6px 22px;
+    font-size: 18px;
+    font-weight: 300;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+
+
+        .date-input {
+            color-scheme: light;
+        }
+
+        .date-input::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            
+        }
+
+        /* Button Group */
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .assignment-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            border: 1px solid;
+            border-radius: 10px;
+            padding: 5px 14px;
+            font-size: 18px;
+            font-weight: 300;
+            letter-spacing: -0.72px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #171717;
+            border-color: rgba(96, 86, 202, 1);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #F5F5F5;
+          
+            color: rgb(23, 23, 23);
+        }
+
+        .status-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            border: 1px solid;
+            border-radius: 10px;
+            padding: 3px 15px;
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: -0.64px;
+            color: white;
+            text-align: center;
+        }
+
+        .badge-present {
+            background-color: rgba(0, 199, 105, 1);
+            border-color: rgba(0, 133, 70, 1);
+        }
+
+        .badge-absent {
+            background-color: rgba(231, 0, 11, 1);
+            border-color: rgba(164, 0, 8, 1);
+        }
+
+        /* Students List */
+        .students-scroll {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .students-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .students-scroll {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .attendance-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0px 4px 4px -2px rgba(0, 0, 0, 0.25);
+            border: 1px solid black;
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 64px;
+            margin-top: 16px;
+        }
+
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 17px;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 1px solid black;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .student-details h3 {
+            font-size: 20px;
+            font-weight: 400;
+            color: black;
+            letter-spacing: -0.4px;
+            margin-bottom: 2px;
+        }
+
+        .student-details p {
+            font-size: 12px;
+            color: black;
+            letter-spacing: -0.24px;
+        }
+
+        .attendance-status {
+            border: 1px solid;
+            border-radius: 10px;
+            padding: 1px 19px;
+            font-size: 18px;
+            font-weight: 400;
+            color: white;
+            letter-spacing: -0.64px;
+        }
+
+        .status-present {
+            background-color: rgba(0, 199, 105, 1);
+            border-color: rgba(0, 133, 70, 1);
+        }
+
+        .status-absent {
+            background-color: rgba(231, 0, 11, 1);
+            border-color: rgba(164, 0, 8, 1);
+        }
+
+        /* File Upload */
+        .upload-area {
+            background-color: rgba(248, 248, 255, 1);
+            border: 2px dashed rgba(56, 78, 183, 0.3);
+            border-radius: 8px;
+            padding: 117px 59px 17px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            margin-top: 12px;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(56, 78, 183, 0.6);
+        }
+
+        .upload-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(15, 15, 15, 1);
+        }
+
+        .upload-browse {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(72, 62, 168, 1);
+            text-decoration: underline;
+        }
+
+        .upload-formats {
+            font-size: 12px;
+            color: rgba(103, 103, 103, 1);
+            letter-spacing: -0.24px;
+            margin-top: 10px;
+        }
+.upload-area i {
+    font-size: 48px; /* adjust as needed */
+    color: rgba(72, 62, 168, 1);
+ margin-bottom: 50px;
+}
+
+
+        @media (max-width: 768px) {
+            header {
+                padding: 11px 20px;
+                gap: 40px;
             }
+
+            .page-title {
+                font-size: 40px;
+            }
+
+            main {
+                padding: 34px 20px 0;
+            }
+
+            .content-grid {
+                flex-direction: column;
+            }
+
+            .left-column,
+            .right-column {
+                width: 100%;
+            }
+
+            .card {
+                padding: 32px 20px;
+            }
+
+            .attendance-card {
+                padding: 11px 20px;
+            }
+        }
+        /* Responsive Navbar */
+@media (max-width: 900px) {
+    nav {
+        display: none;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px 0;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+        z-index: 100;
+    }
+
+    nav.active {
+        display: flex;
+    }
+
+    header {
+        position: relative;
+        justify-content: space-between;
+    }
+
+    .menu-toggle {
+        display: block;
+        font-size: 26px;
+        cursor: pointer;
+        color: black;
+    }
+
+    .logo {
+        flex-grow: 0;
+    }
+}
+
+/* Hide hamburger on large screens */
+.menu-toggle {
+    display: none;
+}
+    </style>
+
+
+          
+</head>
+<body>
+    <!-- Header -->
+    <header>
+      <i class="fa-solid fa-bars menu-toggle"></i>
+
+        <div class="logo">Logo</div>
+        <nav>
+            <a href="#">home</a>
+            <a href="#">Classes</a>
+            <a href="#">home</a>
+            <a href="#">home</a>
+        </nav>
+        <div class="user-profile">
+            <span>abhirajgoat</span>
+            <div class="user-avatar"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <h1 class="page-title">Classes</h1>
+        <p class="page-subtitle">Assign and manage materials</p>
+
+        <div class="content-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Class Assignment Card -->
+                <div class="card">
+                    <h2 class="card-title">Assign and manage materials</h2>
+                    <p class="card-description">
+                        Select a class, choose a course and assign to whole class or absentees.<br>
+                    </p>
+
+                    <form>
+                        <div class="form-group">
+                            <label for="class-select">Classes</label>
+                            <select id="class-select">
+  <% teacher.sections.forEach((section, index) => { %>
+    <option value="<%= index %>"><%=section.name%></option>
+  <% }) %>
+</select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="course-select">Course</label>
+                            <select id="course-select">
+                                <option value="math">Math : Socialism in linear algebra</option>
+                                <option value="physics">Physics : Quantum Mechanics</option>
+                                <option value="chemistry">Chemistry : Organic Chemistry</option>
+                                <option value="biology">Biology : Cell Biology</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date-select">Date</label>
+                            <input 
+                                type="date" 
+                                id="date-select"
+                                class="date-input"
+                                placeholder="dd-mm-yyyy"
+                            />
+                        </div>
+
+                       <div class="form-group">
+  <label for="material-select">Material</label>
+  <select id="material-select">
+    <option value="">Select</option>
+    <option value="browse">Browse</option>
+    <option value="upload">Select</option>
+    <!-- Uploaded files will be appended here -->
+  </select>
+</div>
+
+<input type="file" id="material-upload" multiple style="display:none;" />
+
+
+
+                        <div class="button-group">
+                            <div class="assignment-buttons">
+                                <button type="button" class="btn btn-primary">Assign to whole class</button>
+                                <button type="button" class="btn btn-secondary">Assign to absentees</button>
+                            </div>
+                            <div class="status-badges">
+                                <span class="badge badge-present">Present : 30</span>
+                                <span class="badge badge-absent">Absent : 2</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Students List Card -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 class="card-title" style="margin-bottom: 0;">Students</h2>
+                        <span style="font-size: 16px; color: rgb(0, 0, 0); font-weight: 600px;">10/10/2010</span>
+                    </div>
+                    <div class="students-scroll">
+                        <!-- Student 1 -->
+                        <div class="attendance-card">
+                            <div class="student-info">
+                                <input type="checkbox" class="checkbox">
+                                <div class="student-details">
+                                    <h3>Abhiraj Goat</h3>
+                                    <p>+91 0000000000</p>
+                                </div>
+                            </div>
+                            <span class="attendance-status status-present">Present</span>
+                        </div>
+
+                        <!-- Student 2 -->
+                        <div class="attendance-card">
+                            <div class="student-info">
+                                <input type="checkbox" class="checkbox">
+                                <div class="student-details">
+                                    <h3>Abhiraj Goat</h3>
+                                    <p>+91 0000000000</p>
+                                </div>
+                            </div>
+                            <span class="attendance-status status-absent">Absent</span>
+                        </div>
+
+                        <!-- Student 3 -->
+                        <div class="attendance-card">
+                            <div class="student-info">
+                                <input type="checkbox" class="checkbox">
+                                <div class="student-details">
+                                    <h3>Abhiraj Goat</h3>
+                                    <p>+91 0000000000</p>
+                                </div>
+                            </div>
+                            <span class="attendance-status status-absent">Absent</span>
+                        </div>
+
+                        <!-- Student 4 -->
+                        <div class="attendance-card">
+                            <div class="student-info">
+                                <input type="checkbox" class="checkbox">
+                                <div class="student-details">
+                                    <h3>Abhiraj Goat</h3>
+                                    <p>+91 0000000000</p>
+                                </div>
+                            </div>
+                            <span class="attendance-status status-present">Present</span>
+                        </div>
+
+                        <!-- Student 5 (extra for scrolling) -->
+                        <div class="attendance-card">
+                            <div class="student-info">
+                                <input type="checkbox" class="checkbox">
+                                <div class="student-details">
+                                    <h3>Abhiraj Goat</h3>
+                                    <p>+91 0000000000</p>
+                                </div>
+                            </div>
+                            <span class="attendance-status status-present">Present</span>
+                        </div>
+
+                        <!-- Student 6 (extra for scrolling) -->
+                        <div class="attendance-card">
+                            <div class="student-info">
+                                <input type="checkbox" class="checkbox">
+                                <div class="student-details">
+                                    <h3>Abhiraj Goat</h3>
+                                    <p>+91 0000000000</p>
+                                </div>
+                            </div>
+                            <span class="attendance-status status-absent">Absent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- File Upload Card -->
+                <div class="card">
+                    <h2 class="card-title">Upload Attendence Sheet</h2>
+                    <p class="card-description">
+                        We'll OCR names, mark them present, and compute absentees. Review and adjust if needed.
+                    </p>
+                  <div class="upload-area">
+                          <i class="fa-solid fa-cloud-arrow-up"></i>
+    <div>
+  
+        <span class="upload-text">Drag & drop files or </span>
+        <span class="upload-browse">Browse</span>
+    </div>
+    <div class="upload-formats">Supported formates: JPEG, PNG, PDF, lauda lassan</div>
+</div>
+                </div>
+
+                <!-- Guidelines Card -->
+                <div class="card">
+                    <h2 class="card-title">Guidelines</h2>
+                    <ul style="font-size: 14px; color: rgba(103, 103, 103, 1); line-height: 1.8; padding-left: 20px;">
+                        <li>The image should be under 10mb</li>
+                        <li>It should be not blurred</li>   
+                        <li>Take the image from the top for clear image</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+   <script>
+const sectionsData = <%- JSON.stringify(teacher.sections) %>;
+const classSelect = document.getElementById("class-select");
+const studentsContainer = document.querySelector(".students-scroll");
+const uploadArea = document.querySelector('.upload-area');
+
+document.addEventListener("DOMContentLoaded", function () {
+    const materialSelect = document.getElementById("material-select");
+    const fileInput = document.getElementById("material-upload");
+
+    // Dropdown change event
+    materialSelect.addEventListener("change", function () {
+        const value = materialSelect.value;
+        if (value === "browse") {
+            window.location.href = "/browse";
+        } else if (value === "upload") {
+            fileInput.click();
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener("change", function () {
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) return;
+
+        // Remove previous uploaded options
+        const existingOptions = Array.from(materialSelect.options).filter(opt => opt.classList.contains("uploaded-file"));
+        existingOptions.forEach(opt => opt.remove());
+
+        // Add new options
+        files.forEach(file => {
+            const option = document.createElement("option");
+            option.value = file.name;
+            option.textContent = file.name;
+            option.classList.add("uploaded-file");
+            materialSelect.appendChild(option);
         });
 
-        // 9️⃣ Delete temp file
-        fs.unlinkSync(filePath);
+        materialSelect.value = files[0].name;
+    });
 
-        // 10️⃣ Return JSON to front-end
-        return res.json({ students: ocrStudents, date: new Date().toLocaleDateString() });
-
-    } catch (err) {
-        console.error("OCR Error:", err.message, err.response?.data);
-        return res.status(500).json({ error: "Error uploading or parsing file" });
-    }
-});
-app.get('/test',auth,(req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    res.render('test');
-});
-
-// Login & Logout
-app.get('/login', auth, (req, res) => {
-    if (res.locals.teacher) return res.redirect('/dash');
-    res.render('login', { error: null });
-});
-
-app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const teacher = await Teacher.findOne({ email });
-        if (!teacher) return res.render('login', { error: 'User not found' });
-        if (teacher.password !== password) return res.render('login', { error: 'Invalid password' });
-
-        const token = jwt.sign(
-            { id: teacher._id, username: teacher.username, email: teacher.email, sections: teacher.sections },
-            JWT_SECRET,
-            { expiresIn: '2h' }
-        );
-
-        res.cookie('token', token, { httpOnly: true });
-        res.redirect('/dash');
-    } catch (err) {
-        console.error(err);
-        res.render('login', { error: 'Server error' });
-    }
-});
-
-app.get('/logout', (req, res) => {
-    res.clearCookie('token');
-    res.redirect('/login');
-});
-
-// Browse route — fetch YouTube videos
-app.get("/browse", auth, async (req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    const query = req.query.q || "educational";
-    const API_KEY =  "AIzaSyBGki6h-QZipjIDVEllmT1Wd1DMq1qoOv8";
-    try {
-        const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
-            params: {
-                part: "snippet",
-                type: "video",
-                q: query,
-                maxResults: 10,
-                key: API_KEY,
-            },
+    // Assignment button toggle
+    // Assignment button toggle + send material logic
+const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
+assignButtons.forEach(button => {
+    button.addEventListener('click', async function () {
+        assignButtons.forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-secondary');
         });
+        this.classList.remove('btn-secondary');
+        this.classList.add('btn-primary');
 
-        const videos = response.data.items.map(v => {
-            const videoId = v.id.videoId;
-            return {
-                title: v.snippet.title,
-                channel: v.snippet.channelTitle,
-                thumbnail: v.snippet.thumbnails.medium.url,
-                videoId,
-                downloadUrl: `https://ytmp4.biz/convert/?query=https://www.youtube.com/watch?v=${videoId}`
-            };
-        });
+        // 1️⃣ Get selected section
+        const sectionIndex = classSelect.value;
+        const section = sectionsData[sectionIndex];
+        if (!section || !section.students.length) {
+            alert("No students in this class!");
+            return;
+        }
 
-        res.render("yt", { videos, query });
-    } catch (err) {
-        console.error(err.message);
-        res.render("yt", { videos: [], query, error: "Failed to fetch YouTube data" });
+        // 2️⃣ Get selected file name
+        const materialSelect = document.getElementById("material-select");
+        const fileName = materialSelect.value;
+        const fileInput = document.getElementById("material-upload");
+
+        let fileUrl = "";
+
+        // 3️⃣ If "upload" file exists locally, upload it first
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            fileUrl = await uploadMaterial(file);
+            if (!fileUrl) {
+                alert("File upload failed!");
+                return;
+            }
+        } else if (fileName && !["", "browse", "upload"].includes(fileName)) {
+            // Already uploaded material name (optional)
+            fileUrl = `/uploads/${fileName}`;
+        } else {
+            alert("Please select or upload a material first!");
+            return;
+        }
+
+        // 4️⃣ Prepare recipients
+        const recipients =
+            this.textContent.includes("whole class")
+                ? section.students.map(s => s.phone)
+                : section.students
+                    .filter(s => s.status === "ABSENT")
+                    .map(s => s.phone);
+
+        if (!recipients.length) {
+            alert("No recipients found!");
+            return;
+        }
+
+        // 5️⃣ Send SMS via backend
+        try {
+            const res = await fetch("/send-sms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recipients,
+                    message: `Hi! A new material has been assigned to you. View it here: ${fileUrl}`
+                }),
+            });
+            const data = await res.json();
+            if (data.success) alert("SMS sent successfully!");
+            else alert("Some messages failed.");
+        } catch (err) {
+            console.error("Error sending SMS:", err);
+            alert("Error sending SMS. Check console for details.");
+        }
+    });
+});
+
+    // Menu toggle
+    const menuToggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('nav');
+    menuToggle.addEventListener('click', () => {
+        nav.classList.toggle('active');
+    });
+});
+
+// ----- Section Rendering -----
+function renderStudents(sectionIndex) {
+    const section = sectionsData[sectionIndex];
+    studentsContainer.innerHTML = "";
+
+    if (!section || !section.students.length) {
+        studentsContainer.innerHTML = "<p>No students found in this section</p>";
+        return;
     }
+
+    section.students.forEach(student => {
+        const div = document.createElement("div");
+        div.classList.add("attendance-card");
+        div.innerHTML = `
+            <div class="student-info">
+                <input type="checkbox" class="checkbox">
+                <div class="student-details">
+                    <h3>${student.name}</h3>
+                    <p>${student.phone}</p>
+                </div>
+            </div>
+            <span class="attendance-status status-present">Present</span>
+        `;
+        studentsContainer.appendChild(div);
+    });
+}
+
+// Initially render first section
+if (sectionsData.length) renderStudents(0);
+
+// Change students when dropdown changes
+classSelect.addEventListener("change", () => {
+    renderStudents(classSelect.value);
 });
-// --- Twilio SMS endpoint (hardcoded creds for local testing) ---
-app.post('/absentees/sms', auth, async (req, res) => {
-  try {
-    // <<--- PUT YOUR TWILIO CREDENTIALS HERE (local testing only) --->
-    
 
-    const twilioClient = require('twilio')(accountSid, authToken);
+// ----- Upload Area Logic -----
+uploadArea.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.png,.jpg,.jpeg,.pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    const { to, body, materialUrl } = req.body;
-    const recipients = Array.isArray(to) ? to : [];
+        const formData = new FormData();
+        formData.append('file', file);
 
-    if (!recipients.length) return res.status(400).json({ error: 'No recipients provided' });
+        try {
+            const res = await fetch('/class', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
 
-    const messageText = `${body || 'New class material:'}${materialUrl ? '\n' + materialUrl : ''}`;
+            if (data.error) {
+                alert("OCR failed: " + data.error);
+                return;
+            }
 
-    const results = await Promise.allSettled(
-      recipients.map(number =>
-        twilioClient.messages.create({ from: fromNumber, to: number, body: messageText })
-      )
-    );
-
-    const details = results.map((r, i) => ({
-      number: recipients[i],
-      status: r.status,
-      error: r.status === 'rejected' ? (r.reason?.message || String(r.reason)) : null
-    }));
-
-    const sent = details.filter(d => d.status === 'fulfilled').length;
-    const failed = details.length - sent;
-
-    return res.json({ success: true, sent, failed, details });
-  } catch (err) {
-    console.error('Twilio SMS error:', err);
-    return res.status(500).json({ success: false, error: err.message });
-  }
+            // Populate students from OCR
+            populateStudents(data.students, data.date);
+        } catch (err) {
+            console.error(err);
+            alert("Error uploading or parsing file");
+        }
+    };
+    input.click();
 });
-// add near top: ensure public/uploads is served (you already have express.static('public'))
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-app.post("/send-sms", async (req, res) => {
-  const { recipients, message } = req.body;
+// Drag & drop visual effects
+uploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'rgba(56, 78, 183, 0.6)';
+});
+uploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'rgba(56, 78, 183, 0.3)';
+});
+uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'rgba(56, 78, 183, 0.3)';
+    console.log('Files dropped:', e.dataTransfer.files);
+});
 
-  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
-    return res.status(400).json({ error: "No recipients provided" });
-  }
-
-  const failedNumbers = [];
-
-  for (const phone of recipients) {
+// ----- Function to populate OCR students -----
+async function uploadMaterial(file) {
     try {
-      await client.messages.create({
-        body: message,
-        from: twilioNumber,
-        to: phone, // must be a verified number if in trial
-      });
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await res.json();
+
+        if (data.fileUrl) {
+            return data.fileUrl; // ✅ use this URL in SMS
+        } else {
+            console.error("Upload error:", data);
+            return null;
+        }
     } catch (err) {
-      console.error("Failed to send to", phone, err.message);
-      failedNumbers.push(phone);
+        console.error("Upload failed:", err);
+        return null;
     }
-  }
+}
+function populateStudents(students, date) {
+    studentsContainer.innerHTML = "";
 
-  if (failedNumbers.length === 0) {
-    return res.json({ success: true });
-  } else {
-    return res.json({ success: false, failed: failedNumbers });
-  }
-});
-app.post('/upload-material', auth, async (req, res) => {
-  try {
-    if (!req.files || !req.files.file) return res.status(400).json({ error: 'No file' });
+    let presentCount = 0;
+    let absentCount = 0;
 
-    const file = req.files.file;
-    // sanitize filename (basic)
-    const safeName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const dest = path.join(uploadsDir, safeName);
-    await file.mv(dest);
+    students.forEach(student => {
+        const card = document.createElement('div');
+        card.classList.add('attendance-card');
 
-    // public URL (served via express.static on /public)
-    const url = `${req.protocol}://${req.get('host')}/uploads/${safeName}`;
-    return res.json({ url });
-  } catch (err) {
-    console.error('Upload error:', err);
-    return res.status(500).json({ error: 'Upload failed' });
-  }
-});
+        const infoDiv = document.createElement('div');
+        infoDiv.classList.add('student-info');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.classList.add('checkbox');
+
+        const details = document.createElement('div');
+        details.classList.add('student-details');
+        details.innerHTML = `<h3>${student.name}</h3><p>${student.phone}</p>`;
+
+        infoDiv.appendChild(checkbox);
+        infoDiv.appendChild(details);
+
+        const status = document.createElement('span');
+        status.classList.add('attendance-status', student.status === "PRESENT" ? 'status-present' : 'status-absent');
+        status.textContent = student.status;
+
+        card.appendChild(infoDiv);
+        card.appendChild(status);
+
+        studentsContainer.appendChild(card);
+
+        if (student.status === "PRESENT") presentCount++;
+        else absentCount++;
+    });
+
+    // Update badge counts
+    const presentBadge = document.querySelector('.badge-present');
+    const absentBadge = document.querySelector('.badge-absent');
+    if (presentBadge) presentBadge.textContent = `Present : ${presentCount}`;
+    if (absentBadge) absentBadge.textContent = `Absent : ${absentCount}`;
+
+    // Update date
+    const dateElem = document.querySelector('.card .students-scroll')?.previousElementSibling?.querySelector('span');
+    if (dateElem) dateElem.textContent = date;
+}
+
+// ----- Send SMS to whole class -----
+async function sendToWholeClass(sectionIndex) {
+    const section = sectionsData[sectionIndex];
+    if (!section || !section.students.length) return;
+
+    const phones = section.students.map(s => s.phone);
+
+    try {
+        const res = await fetch('/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipients: phones, message: "Hi! You have a new material assigned." })
+        });
+        const data = await res.json();
+        if (data.success) alert("Messages sent successfully!");
+        else alert("Some messages could not be sent: " + (data.failed || []).join(", "));
+    } catch (err) {
+        console.error("Error sending SMS:", err);
+        alert("Error sending SMS. Check console for details.");
+    }
+}
+</script>
 
 
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+
+
+
+</body>
+</html>
