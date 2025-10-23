@@ -13,9 +13,9 @@ const fileUpload = require('express-fileupload');
 
 dotenv.config();
 
-const accountSid = "ACde171f7238c5b9e81626f8c87bf570ef";
-const authToken  = "e0573e8117cfc92f4470cd589e00bc6a";
-const twilioNumber = "+19786446908"; 
+const accountSid = "ACf7688481cac5cc8144b00fb7b87d5044";
+const authToken  = "51a48b60dbf4da32cf0abd8ce0b889b5";
+const twilioNumber = "+14172724533"; 
 const JWT_SECRET = "rishik@123";
 
 const app = express();
@@ -65,7 +65,7 @@ app.get('/dash', auth, (req, res) => {
 app.get('/', (req, res) => res.render('land'));
 
 // ✅ UPLOAD PAGE (HTML + JS)
-app.get('/upload', auth, (req, res) => {
+app.get('/upload', (req, res) => {
   if (!res.locals.teacher) return res.redirect('/login');
   res.send(`<!DOCTYPE html>
   <html lang="en">
