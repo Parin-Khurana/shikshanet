@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tests</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+   @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
 * {
   margin: 0;
   padding: 0;
@@ -25,62 +26,38 @@ body {
   padding: 0 24px;
 }
 
-.header {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e5e5;
+body {
+  font-family: "Geist", sans-serif;
+  background-color: #FBF9F7;
 }
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 0;
+.navbar {
+  background-color: #FBF9F7;
+  border-bottom: 1px solid #FBF9F7;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  width: 100%;
 }
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 48px;
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.25rem;
 }
-
-.logo {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
 .nav-link {
-  font-size: 14px;
-  color: #000000;
-  text-decoration: none;
-  transition: color 0.2s;
+  color: #333;
+  margin: 0 1rem;
 }
-
-.nav-link:hover {
-  color: #737373;
-}
-
-.header-right {
+.profile-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.5rem;
 }
-
-.username {
-  font-size: 14px;
-}
-
-.avatar {
+.profile-icon {
   width: 32px;
   height: 32px;
+  background-color: #333;
   border-radius: 50%;
-  background-color: #000000;
 }
+
+
 
 .main {
   padding: 32px 0;
@@ -154,6 +131,7 @@ body {
 
 .card-header-content {
   flex: 1;
+  
 }
 
 .card-title {
@@ -172,6 +150,7 @@ body {
 }
 
 .form {
+  margin-top: 40px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -401,6 +380,134 @@ body {
   color: #737373;
 }
 
+/* --- Assign Tab Styles --- */
+.assign-card-title {
+    font-size: 16px; 
+    font-weight: 600;
+    margin-bottom: 0;
+}
+.assign-card .card-header {
+    margin-bottom: 0px; 
+}
+
+.test-file-info {
+    margin-top: -8px; 
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.file-uploaded-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #e5e5e5;
+    border-radius: 15px;
+    background-color: #ffffff;
+    width: 50%; 
+}
+
+.file-name-display {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.student-selection-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 16px; 
+}
+
+.student-selection-instruction {
+    font-size: 14px;
+    color: #737373;
+    margin-bottom: 8px;
+}
+
+.select-all-wrapper {
+    display: flex;
+    align-self: flex-end;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #000000;
+    margin-top: -48px; 
+}
+
+.select-all-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: #000000;
+    border-radius: 4px;
+}
+
+.students-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.student-item {
+    display: flex;
+    align-items: center;
+    background-color: #FBF9F7; 
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #FBF9F7;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.student-item.selected {
+    background-color: #F0FAF6; 
+    border-color: #10B981; 
+}
+
+.student-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-right: 12px;
+ 
+    accent-color: #10B981; 
+    border-color: #e5e5e5;
+}
+
+.student-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.student-name {
+    font-weight: 500;
+    margin-right: auto;
+}
+
+.student-contact {
+    font-size: 12px;
+    color: #737373;
+}
+
+.checked-icon {
+
+    margin-left: 12px;
+    display: none; 
+    flex-shrink: 0;
+}
+
+.student-item.selected .checked-icon {
+    display: block; 
+}
+
+
+
 @media (max-width: 768px) {
   .header-left {
     gap: 24px;
@@ -417,30 +524,35 @@ body {
   .tabs {
     max-width: 100%;
   }
+
+  .file-uploaded-wrapper {
+      width: 100%;
+  }
 }
+
   </style>
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <div class="header-content">
-        <div class="header-left">
-          <div class="logo">Logo</div>
-          <nav class="nav">
-            <a href="index.html" class="nav-link">Home</a>
-            <a href="class.html" class="nav-link">Classes</a>
-            <a href="test.html" class="nav-link">Tests</a>
-            <a href="yt.html" class="nav-link">Learn</a>
-          </nav>
-        </div>
-        <div class="header-right">
-          <span class="username">abhirajgoat</span>
-          <div class="avatar"></div>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="studentdash.html">Logo</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mx-auto">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="class.html">Classes</a></li>
+          <li class="nav-item"><a class="nav-link" href="test.html">Tests</a></li>
+          <li class="nav-item"><a class="nav-link" href="yt.html">Learn</a></li>
+        </ul>
+        <div class="profile-section">
+          <span>abhirajgoat</span>
+          <div class="profile-icon"></div>
         </div>
       </div>
     </div>
-  </header>
-
+  </nav>
   <main class="main">
     <div class="container">
       <div class="page-header">
@@ -536,8 +648,194 @@ body {
       </div>
 
       <!-- Other tabs unchanged -->
-      <div id="upload-tab" class="tab-content"><div class="card"><p>Upload tab...</p></div></div>
-      <div id="assign-tab" class="tab-content"><div class="card"><p>Assign tab...</p></div></div>
+      <div id="upload-tab" class="tab-content"><div class="card"> <div class="upload-container">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h2 class="card-title">Upload</h2>
+                                <p class="card-description">Upload your test files</p>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="addFileInput()">Add</button>
+                        </div>
+
+                        <div id="files-list" class="files-list">
+                            <div class="file-input-group">
+                                <div class="file-input-wrapper">
+                                    <input type="text" class="input file-name-input" placeholder="File 1" readonly>
+                                    <button type="button" class="btn-remove" onclick="removeFileInput(this)">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" style="width: auto; align-self: flex-start;">Save and continue</button>
+
+                        <div id="drop-zone" class="drop-zone">
+                            <p class="placeholder-text">PREVIEW</p>
+                        </div>
+                    </div></div></div>
+      <div id="assign-tab" class="tab-content"><div class="card assign-card"> <div class="card-header">
+                        <div class="card-header-content">
+                            <h2 class="card-title assign-card-title">Test Details</h2>
+                            <p class="card-description">Test information</p>
+                        </div>
+                    </div>
+                    <form class="form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="label">Test name</label>
+                                <input type="text" class="input" placeholder="Test name">
+                            </div>
+                            <div class="form-group">
+                                <label class="label">Class</label>
+                                <select class="select">
+                                    <option>Select a class</option>
+                                    <option>Class 10</option>
+                                    <option>Class 12</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="label">Course Name</label>
+                                <select class="select">
+                                    <option>Select a course name</option>
+                                    <option>Mathematics</option>
+                                    <option>Science</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="label">Due Date</label>
+                                <input type="text" class="input" placeholder="dd-mm-yyyy">
+                            </div>
+                        </div>
+
+                        <div class="test-file-info">
+                            <p class="label">Test file</p>
+                            <div class="file-uploaded-wrapper">
+                                <p class="file-name-display">filename.pdf</p>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="student-selection-header">
+                            <p class="label">Students</p>
+                            <p class="student-selection-instruction">Choose which students to assign to</p>
+                            <div class="select-all-wrapper">
+                                <input type="checkbox" id="select-all" class="select-all-checkbox">
+                                <label for="select-all">Select all</label>
+                            </div>
+                        </div>
+
+                        <div class="students-list">
+                            <div class="student-item selected">
+                                <input type="checkbox" id="student-1" class="student-checkbox" checked>
+                                <label for="student-1" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-2" class="student-checkbox">
+                                <label for="student-2" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-3" class="student-checkbox">
+                                <label for="student-3" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-4" class="student-checkbox">
+                                <label for="student-4" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-5" class="student-checkbox">
+                                <label for="student-5" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-6" class="student-checkbox">
+                                <label for="student-6" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-7" class="student-checkbox">
+                                <label for="student-7" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-8" class="student-checkbox">
+                                <label for="student-8" class="student-label">
+                                    <span class="student-name">Abhiraj Cutie</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-9" class="student-checkbox">
+                                <label for="student-9" class="student-label">
+                                    <span class="student-name">Abhiraj Goat</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                            <div class="student-item">
+                                <input type="checkbox" id="student-10" class="student-checkbox">
+                                <label for="student-10" class="student-label">
+                                    <span class="student-name">Abhiraj Goat</span>
+                                    <span class="student-contact">+91 93636000939</span>
+                                </label>
+                                <svg class="checked-icon" width="20" height="20" viewBox="0 0 24 24" fill="#10B981" stroke="none">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                    </form>
+                </div></div></div>
     </div>
   </main>
 
