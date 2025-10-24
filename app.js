@@ -10,7 +10,8 @@ const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-const Student = require('./models/student');
+const { Student, studentSchema } = require('./models/student');
+const { TestAssignment, testAssignmentSchema } = require('./models/testAssignment');
 
 dotenv.config();
 

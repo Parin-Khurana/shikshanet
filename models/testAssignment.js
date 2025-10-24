@@ -55,4 +55,6 @@ const testAssignmentSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('TestAssignment', testAssignmentSchema);
+const TestAssignment = mongoose.model('TestAssignment', testAssignmentSchema);
+
+module.exports = { TestAssignment, testAssignmentSchema };

@@ -781,7 +781,8 @@ body {
           <select class="select" id="section-select">
             <option value="">Select a section</option>
             <% teacher.sections.forEach(section => { %>
-              <option value="<%= section.name %>"><%= section.name %></option>
+              <% const sectionName = section.sectionName || section.name || 'Unnamed'; %>
+              <option value="<%= sectionName %>"><%= sectionName %></option>
             <% }) %>
           </select>
         </div>
@@ -915,7 +916,7 @@ body {
   // Section dropdown change
   sectionSelect.addEventListener('change', (e) => {
     const selectedSection = e.target.value;
-    const section = sections.find(sec => sec.name === selectedSection);
+    const section = sections.find(sec => (sec.sectionName || sec.name) === selectedSection);
     if (section) {
       renderStudents(section.students);
     } else {
@@ -938,7 +939,7 @@ body {
   // Assign button click handler
   assignButton.addEventListener('click', async () => {
     const selectedSection = sectionSelect.value;
-    const section = sections.find(sec => sec.name === selectedSection);
+    const section = sections.find(sec => (sec.sectionName || sec.name) === selectedSection);
     
     if (!section) {
       alert("Please select a section first!");
