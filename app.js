@@ -10,43 +10,8 @@ const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-// Create Student model with student database connection
-const studentSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  phone: { type: String, required: true, unique: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true },
-  assignedTests: [{
-    testName: String,
-    subject: String,
-    courseName: String,
-    dueDate: String,
-    fileUrl: String,
-    fileName: String,
-    teacherId: String,
-    teacherName: String,
-    assignedDate: { type: Date, default: Date.now },
-    status: { type: String, enum: ['assigned', 'completed', 'overdue'], default: 'assigned' }
-  }]
-}, { timestamps: true });
+const Student = require('./models/student');
 
-const testAssignmentSchema = new mongoose.Schema({
-  testName: { type: String, required: true, trim: true },
-  subject: { type: String, required: true, trim: true },
-  courseName: { type: String, required: true, trim: true },
-  dueDate: { type: String, required: true },
-  fileUrl: { type: String, required: true },
-  fileName: { type: String, required: true },
-  teacherId: { type: String, required: true },
-  teacherName: { type: String, required: true },
-  assignedDate: { type: Date, default: Date.now },
-  studentPhone: { type: String, required: true },
-  studentId: { type: String, required: true },
-  status: { type: String, enum: ['assigned', 'completed', 'overdue'], default: 'assigned' }
-}, { timestamps: true });
-
-// Create models after connection is established
-let StudentModel, TestAssignmentModel;
 dotenv.config();
 
 const accountSid = "ACf7688481cac5cc8144b00fb7b87d5044";
@@ -155,6 +120,10 @@ app.get('/logout_student', (req, res) => {
   res.clearCookie('studentToken');
   res.redirect('/login_student');
 });
+app.get('/courses', auth, (req, res) => {
+  if (!res.locals.teacher) return res.redirect('/login');
+  res.render('courses', { teacher: res.locals.teacher });
+});
 // --- ROUTES ---
 app.get('/studentdash', studentAuth, async (req, res) => {
   if (!res.locals.student) return res.redirect('/login_student');
@@ -200,6 +169,52 @@ app.get('/dash', auth, (req, res) => {
   if (!res.locals.teacher) return res.redirect('/login');
   res.render('dash', { teacher: res.locals.teacher });
 });
+
+
+app.post('/add-course', auth, async (req, res) => {
+  try {
+    const { sectionId, courseName, description, status } = req.body;
+
+    // Get teacher ID from res.locals
+    const teacherId = res.locals.teacher.id;
+
+    // Fetch teacher document
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) return res.status(404).send('Teacher not found');
+
+    // Find the section by _id
+    console.log('Adding course to section ID:', sectionId);
+      const section = teacher.sections.find(
+  sec => sec._id.toString() === sectionId
+);
+
+    if (!section) {
+      console.log('Available sections:', teacher.sections.map(s => s._id));
+      return res.status(404).send('Section not found');
+    }
+    
+
+    // Initialize courses array if it doesn't exist
+    if (!section.courses) section.courses = [];
+
+    // Push new course with correct field names
+    section.courses.push({
+      courseName,    // matches your schema
+      description,
+      status
+    });
+
+    // Save teacher document
+    await teacher.save();
+
+    return res.redirect('/courses'); // redirect to courses page
+  } catch (err) {
+    console.error('Add course error:', err);
+    return res.status(500).send('Server error');
+  }
+});
+
+
 
 app.get('/', (req, res) => res.render('land'));
 

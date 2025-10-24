@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Courses</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Geist", sans-serif; background-color: #FBF9F7; color: #000; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .navbar { background-color: #FBF9F7; border-bottom: 1px solid #FBF9F7; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.4); width: 100%; }
+    .navbar-brand { font-weight: bold; font-size: 1.25rem; }
+    .nav-link { color: #333; margin: 0 1rem; }
+    .profile-section { display: flex; align-items: center; gap: 0.5rem; }
+    .profile-icon { width: 32px; height: 32px; background-color: #333; border-radius: 50%; }
+    .main { padding: 32px 0; }
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 50px; font-weight: 700; margin-bottom: 8px; margin-left: 0; }
+    .page-description { color: #737373; }
+    .section-title { font-size: 24px; font-weight: 600; margin-bottom: 16px; }
+    .course-table { width: 100%; border-collapse: collapse; font-size: 14px; color: #000; }
+    .course-table thead { background-color: #000; color: #fff; }
+    .course-table th, .course-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #E5E7EB; }
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+    .active-status { background-color: #D1FAE5; color: #065F46; border: 1px solid #34D399; }
+    .btn-primary { background-color: #000; color: #fff; border-radius: 6px; padding: 8px 32px; }
+    .btn-primary:hover { background-color: #262626; }
+    .btn-secondary { background-color: #fff; color: #000; border: 1px solid #e5e5e5; padding: 8px 32px; }
+    .btn-secondary:hover { background-color: #f5f5f5; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .input, .select, .textarea { width: 100%; padding: 8px 12px; font-size: 14px; border: 1px solid #e5e5e5; border-radius: 15px; background-color: #fff; }
+    .input:focus, .select:focus, .textarea:focus { outline: none; border-color: #000; }
+    .select{appearance: none;
+  background-color: #fff; /* white input background */
+  border: 1px solid #e5e5e5;
+  border-radius: 15px;
+  padding: 8px 36px 8px 12px; /* keep space for arrow */
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 4L6 8L10 4' stroke='%23737373' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  color: #000; /* text color */
+};
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="studentdash.html">Logo</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mx-auto">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link active" href="class.html">Classes</a></li>
+          <li class="nav-item"><a class="nav-link" href="test.html">Tests</a></li>
+          <li class="nav-item"><a class="nav-link" href="yt.html">Learn</a></li>
+        </ul>
+        <div class="profile-section">
+          <span><%= teacher.username %></span>
+          <div class="profile-icon"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="container">
+      <div class="page-header">
+        <h1 class="page-title">Manage Courses</h1>
+        <p class="page-description">Create, organize, and track your courses.</p>
+      </div>
+
+      <!-- Add Course Form -->
+      <form id="add-course-form" method="POST" action="/add-course" class="mb-4">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="course-name">Course Name</label>
+            <input type="text" id="course-name" name="courseName" class="input" required>
+          </div>
+          <div class="form-group">
+            
+            <label for="section-select">Select Section</label>
+           <select id="section-select" name="sectionId" class="select" required>
+  <% if (teacher && teacher.sections && teacher.sections.length) { %>
+    <% teacher.sections.forEach(section => { %>
+      <% 
+        const sectionId = section._id || section.id || '';
+        const sectionName = section.name || section.sectionName || 'Unnamed';
+      %>
+      <option value="<%= sectionId %>" style="color: black;"><%= sectionName %></option>
+    <% }) %>
+  <% } else { %>
+    <option disabled>No sections available</option>
+  <% } %>
+</select>
+          </div>
+          <div class="form-group">
+            <label for="course-desc">Description</label>
+            <textarea id="course-desc" name="description" class="textarea" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="course-status">Status</label>
+            <select id="course-status" name="status" class="select" required>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Course</button>
+      </form>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 class="section-title">Your Courses</h2>
+      </div>
+
+      <!-- Courses Table -->
+      <div class="card course-table-card">
+        <table class="course-table">
+          <thead>
+            <tr>
+              <th>Course Name</th>
+              <th>Class</th>
+              <th>Description</th>
+              <th>No. of Students</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% teacher.sections.forEach(section => { %>
+              <% if(section.courses) { %>
+                <% section.courses.forEach(course => { %>
+                  <tr>
+                    <td><%= course.name %></td>
+                    <td><%= section.sectionName %></td>
+                    <td><%= course.description %></td>
+                    <td><%= section.students ? section.students.length : 0 %></td>
+                    <td>
+                      <div class="status-badge <%= course.status === 'active' ? 'active-status' : '' %>">
+                        <%= course.status.charAt(0).toUpperCase() + course.status.slice(1) %>
+                      </div>
+                    </td>
+                    <td>
+                      <form method="POST" action="/teacher/course/delete" style="display:inline">
+                        <input type="hidden" name="sectionId" value="<%= section._id %>">
+                        <input type="hidden" name="courseId" value="<%= course._id %>">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

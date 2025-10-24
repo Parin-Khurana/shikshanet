@@ -470,9 +470,14 @@ select, .date-input {
                         <div class="form-group">
                             <label for="class-select">Classes</label>
                             <select id="class-select">
-  <% teacher.sections.forEach((section, index) => { %>
-    <option value="<%= index %>"><%=section.name%></option>
-  <% }) %>
+  <% if (teacher && teacher.sections && teacher.sections.length) { %>
+    <% teacher.sections.forEach((section, index) => { %>
+      <% const sectionName = section.name || section.sectionName || 'Unnamed'; %>
+      <option value="<%= index %>"><%= sectionName %></option>
+    <% }) %>
+  <% } else { %>
+    <option disabled>No sections available</option>
+  <% } %>
 </select>
                         </div>
 

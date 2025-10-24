@@ -13,10 +13,21 @@ const teacherSchema = new mongoose.Schema({
           phone: String,
           rollNo: String
         }
+      ],
+      courses: [
+        {
+          courseName: String,
+          status: {
+            type: String,
+            enum: ['active', 'completed'], // restricts values
+            default: 'active'
+          },
+          description: String
+        }
       ]
     }
   ]
 });
 
-// 👇 IMPORTANT: The first argument 'Teacher' defines the collection name as 'teachers'
+// 👇 The first argument defines the collection name as 'teachers'
 module.exports = mongoose.model('Teacher', teacherSchema);

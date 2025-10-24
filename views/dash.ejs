@@ -370,24 +370,25 @@
     <div class="row g-3">
         <!-- Class Stats -->
         <div class="col-12 col-sm-6 col-lg-3">
-            <div class="stat-card blue">
-                <div class="stat-label">Class</div>
-                <div class="stat-value blue" style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <% if (teacher && teacher.sections && teacher.sections.length) { %>
-                        <% teacher.sections.forEach(section => { %>
-                            <% 
-                                const parts = section.name.split(' '); 
-                            %>
-                            <div style="padding: 2px 6px; background: rgba(255,255,255,0.2); border-radius: 4px;">
-                                <%= parts[0] %><sub><%= parts[1] || '' %></sub>
-                            </div>
-                        <% }) %>
-                    <% } else { %>
-                        <div>No Sections Assigned</div>
-                    <% } %>
-                </div>
-            </div>
+    <div class="stat-card blue">
+        <div class="stat-label">Class</div>
+        <div class="stat-value blue" style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <% if (teacher && teacher.sections && teacher.sections.length) { %>
+                <% teacher.sections.forEach(section => { %>
+                    <% 
+                        const sectionName = section.name || section.sectionName || 'Unnamed'; 
+                        const parts = sectionName.split(' '); 
+                    %>
+                    <div style="padding: 2px 6px; background: rgba(255,255,255,0.2); border-radius: 4px;">
+                        <%= parts[0] %><sub><%= parts[1] || '' %></sub>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div>No Sections Assigned</div>
+            <% } %>
         </div>
+    </div>
+</div>
 
         <!-- Total Courses -->
         <div class="col-12 col-sm-6 col-lg-3">
