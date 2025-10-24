@@ -502,9 +502,29 @@ body {
     flex-shrink: 0;
 }
 
-.student-item.selected .checked-icon {
+  .student-item.selected .checked-icon {
     display: block; 
-}
+  }
+
+  /* Message styling */
+  .message {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
 
 
 
@@ -529,6 +549,68 @@ body {
       width: 100%;
   }
 }
+
+  /* Assign Button Styles */
+  .assign-button-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e5e5;
+    padding: 16px 24px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+  }
+
+  .assign-button-container.visible {
+    display: block;
+  }
+
+  .assign-button {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    background-color: #000000;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .assign-button:hover {
+    background-color: #262626;
+  }
+
+  .assign-button:disabled {
+    background-color: #737373;
+    cursor: not-allowed;
+  }
+
+  /* Add bottom padding to body to prevent content overlap */
+  body {
+    padding-bottom: 80px;
+  }
+
+  @media (max-width: 768px) {
+    .assign-button-container {
+      padding: 12px 16px;
+    }
+    
+    .assign-button {
+      font-size: 14px;
+      padding: 10px 20px;
+    }
+    
+    body {
+      padding-bottom: 70px;
+    }
+  }
 
   </style>
 </head>
@@ -716,23 +798,17 @@ body {
           </select>
         </div>
 
-        <!-- Due Date -->
         <div class="form-group">
           <label class="label" for="due-date">Due Date</label>
           <input type="text" class="input" id="due-date" name="due-date" placeholder="dd-mm-yyyy">
         </div>
-      </div>
-
-      <!-- File Upload -->
+      
       <div class="form-group">
-        <form form id="uploadForm" enctype="multipart/form-data">
-          <label class="label" for="test-file">Upload Test File</label>
+        <label class="label" for="test-file">Upload Test File</label>
         <input type="file" class="input" id="pdfFile" name="pdfFile" accept=".pdf">
-        <button type="submit">Upload PDF</button>
-        </form>
-        <div id="message">yo</div>
-        
-        
+        <button type="button" class="btn btn-primary" id="upload-pdf-btn" style="margin-top: 8px;">Upload PDF</button>
+        <button type="button" class="btn btn-secondary" id="test-sms-btn" style="margin-top: 8px; margin-left: 8px;">Test SMS</button>
+        <div id="message"></div>
       </div>
 
       <!-- Student Selection -->
@@ -754,6 +830,13 @@ body {
   </div>
 </div>
 
+<!-- Assign Button Container -->
+<div class="assign-button-container" id="assign-button-container">
+  <button class="assign-button" id="assign-button" disabled>
+    Assign Test
+  </button>
+</div>
+
  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 
@@ -765,6 +848,28 @@ body {
   const sectionSelect = document.getElementById('section-select');
   const studentsList = document.getElementById('students-list');
   const selectAllCheckbox = document.getElementById('select-all');
+  const assignButtonContainer = document.getElementById('assign-button-container');
+  const assignButton = document.getElementById('assign-button');
+  const testFileInput = document.getElementById('pdfFile');
+  const messageDiv = document.getElementById('message');
+
+  // Global variable to store uploaded file URL
+  window.uploadedFileUrl = null;
+
+  // Global function to update assign button state
+  window.updateAssignButtonState = function() {
+    const hasSection = sectionSelect.value !== "";
+    const hasSelectedStudents = studentsList.querySelectorAll('.student-checkbox:checked').length > 0;
+    const hasUploadedFile = window.uploadedFileUrl !== null;
+
+    if (hasSection && (hasSelectedStudents || hasUploadedFile)) {
+      assignButtonContainer.classList.add('visible');
+      assignButton.disabled = false;
+    } else {
+      assignButtonContainer.classList.remove('visible');
+      assignButton.disabled = true;
+    }
+  };
 
   function renderStudents(students) {
     studentsList.innerHTML = ""; // Clear previous students
@@ -788,6 +893,7 @@ body {
       checkbox.addEventListener('change', () => {
         studentDiv.classList.toggle('selected', checkbox.checked);
         updateSelectAllState();
+        window.updateAssignButtonState();
       });
 
       studentsList.appendChild(studentDiv);
@@ -795,6 +901,7 @@ body {
 
     // Reset Select All checkbox
     selectAllCheckbox.checked = false;
+    window.updateAssignButtonState();
   }
 
   function updateSelectAllState() {
@@ -803,6 +910,7 @@ body {
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     selectAllCheckbox.checked = allChecked;
   }
+
 
   // Section dropdown change
   sectionSelect.addEventListener('change', (e) => {
@@ -814,6 +922,7 @@ body {
       studentsList.innerHTML = "";
       selectAllCheckbox.checked = false;
     }
+    window.updateAssignButtonState();
   });
 
   // Select All checkbox change
@@ -823,6 +932,81 @@ body {
       cb.checked = selectAllCheckbox.checked;
       cb.closest('.student-item').classList.toggle('selected', selectAllCheckbox.checked);
     });
+    window.updateAssignButtonState();
+  });
+
+  // Assign button click handler
+  assignButton.addEventListener('click', async () => {
+    const selectedSection = sectionSelect.value;
+    const section = sections.find(sec => sec.name === selectedSection);
+    
+    if (!section) {
+      alert("Please select a section first!");
+      return;
+    }
+
+    const selectedCheckboxes = studentsList.querySelectorAll('.student-checkbox:checked');
+    const selectedStudents = Array.from(selectedCheckboxes).map(checkbox => {
+      const studentItem = checkbox.closest('.student-item');
+      const name = studentItem.querySelector('.student-name').textContent;
+      const phone = studentItem.querySelector('.student-contact').textContent;
+      return { name, phone };
+    });
+
+    if (selectedStudents.length === 0) {
+      alert("Please select at least one student!");
+      return;
+    }
+
+    if (!window.uploadedFileUrl) {
+      alert("Please upload a test file first!");
+      return;
+    }
+
+    // Send SMS to selected students
+    try {
+      assignButton.disabled = true;
+      assignButton.textContent = "Sending...";
+
+      const recipients = selectedStudents.map(student => student.phone);
+      const message = `Hi! A new test has been assigned to you. View it here: ${window.uploadedFileUrl}`;
+
+      console.log('Sending SMS to:', recipients);
+      console.log('Message:', message);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const response = await fetch('/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipients, message }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      const result = await response.json();
+      
+      console.log('SMS Response:', result);
+      
+      if (result.success) {
+        alert(`Test assigned successfully! SMS sent to ${selectedStudents.length} student(s).`);
+      } else {
+        console.error('SMS failed:', result);
+        alert(`SMS sending failed. ${result.failed ? `Failed numbers: ${result.failed.join(', ')}` : 'Please try again.'}`);
+      }
+    } catch (error) {
+      console.error('Error assigning test:', error);
+      if (error.name === 'AbortError') {
+        alert('SMS request timed out. Please check your internet connection and try again.');
+      } else {
+        alert(`Error assigning test: ${error.message}`);
+      }
+    } finally {
+      assignButton.disabled = false;
+      assignButton.textContent = "Assign Test";
+    }
   });
 });
   const nothing = "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"
@@ -909,23 +1093,75 @@ Format each question clearly numbered.
       alert("Error generating test: " + err.message);
     }
   }
-   document.querySelector('#uploadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const messageDiv = document.getElementById('message');
+
+  // Test SMS button handler
+  document.getElementById('test-sms-btn').addEventListener('click', async () => {
     try {
-        messageDiv.innerHTML = '<div class="message">Uploading...</div>';
-        const response = await fetch('/upload', { method: 'POST', body: formData });
-        const result = await response.json();
-        if (result.success) {
-            console.log(`<div class="message success">✅ Uploaded! <a href="${result.url}" target="_blank">View PDF</a></div>`) 
-        } else {
-            messageDiv.innerHTML = `<div class="message error">❌ Upload failed: ${result.error || 'Unknown error'}</div>`;
-        }
-    } catch (err) {
-        messageDiv.innerHTML = `<div class="message error">❌ Upload failed: ${err.message}</div>`;
+      const messageDiv = document.getElementById('message');
+      messageDiv.innerHTML = '<div class="message">Testing SMS...</div>';
+      
+      // Test with a hardcoded number (you'll need to replace this with a verified Twilio number)
+      const testRecipients = ['+1234567890']; // Replace with your verified Twilio number
+      const testMessage = 'Test SMS from Shikshanet';
+      
+      console.log('Testing SMS to:', testRecipients);
+      
+      const response = await fetch('/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipients: testRecipients, message: testMessage })
+      });
+      
+      const result = await response.json();
+      console.log('Test SMS Response:', result);
+      
+      if (result.success) {
+        messageDiv.innerHTML = '<div class="message success">✅ Test SMS sent successfully!</div>';
+      } else {
+        messageDiv.innerHTML = `<div class="message error">❌ Test SMS failed: ${JSON.stringify(result)}</div>`;
+      }
+    } catch (error) {
+      console.error('Test SMS error:', error);
+      document.getElementById('message').innerHTML = `<div class="message error">❌ Test SMS error: ${error.message}</div>`;
     }
-});
+  });
+
+  // Upload PDF button handler
+  document.getElementById('upload-pdf-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('pdfFile');
+    const messageDiv = document.getElementById('message');
+    
+    if (!fileInput.files[0]) {
+      alert('Please select a PDF file first!');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    
+    try {
+      messageDiv.innerHTML = '<div class="message">Uploading...</div>';
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/upload', { 
+        method: 'POST', 
+        body: formData 
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        window.uploadedFileUrl = result.fileUrl; // Store the uploaded file URL
+        messageDiv.innerHTML = `<div class="message success">✅ Uploaded! <a href="${result.fileUrl}" target="_blank">View PDF</a></div>`;
+        window.updateAssignButtonState(); // Update assign button state
+      } else {
+        messageDiv.innerHTML = `<div class="message error">❌ Upload failed: ${result.error || 'Unknown error'}</div>`;
+      }
+    } catch (err) {
+      messageDiv.innerHTML = `<div class="message error">❌ Upload failed: ${err.message}</div>`;
+    }
+  });
 </script>
 
 </body>
