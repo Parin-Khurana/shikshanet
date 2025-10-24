@@ -242,7 +242,7 @@ app.post('/class', auth, async (req, res) => {
 });
 app.get('/test',auth,(req, res) => {
     if (!res.locals.teacher) return res.redirect('/login');
-    res.render('test');
+    res.render('test', { teacher: res.locals.teacher });
 });
 
 // Login & Logout
@@ -352,35 +352,51 @@ app.post('/absentees/sms', auth, async (req, res) => {
 app.post("/send-sms", async (req, res) => {
   const { recipients, message } = req.body;
 
+  console.log("SMS Request received:", { recipients, message });
+
   if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+    console.log("No recipients provided");
     return res.status(400).json({ error: "No recipients provided" });
   }
 
   const failedNumbers = [];
+  const successfulNumbers = [];
 
   for (const phone of recipients) {
     try {
-      console.log(message)
-      await client.messages.create({
+      console.log(`Attempting to send SMS to ${phone}`);
+      
+      // Add timeout to prevent hanging
+      const smsPromise = client.messages.create({
         body: message,
         from: twilioNumber,
         to: phone, // must be a verified number if in trial
       });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SMS timeout')), 10000)
+      );
+      
+      const result = await Promise.race([smsPromise, timeoutPromise]);
+      console.log(`SMS sent successfully to ${phone}, SID: ${result.sid}`);
+      successfulNumbers.push(phone);
     } catch (err) {
-      console.error("Failed to send to", phone, err.message);
+      console.error(`Failed to send to ${phone}:`, err.message);
       failedNumbers.push(phone);
     }
   }
 
+  console.log(`SMS Summary: ${successfulNumbers.length} successful, ${failedNumbers.length} failed`);
+
   if (failedNumbers.length === 0) {
-    return res.json({ success: true });
+    return res.json({ success: true, sent: successfulNumbers.length });
   } else {
-    return res.json({ success: false, failed: failedNumbers });
+    return res.json({ success: false, failed: failedNumbers, sent: successfulNumbers.length });
   }
 });
 
 
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
