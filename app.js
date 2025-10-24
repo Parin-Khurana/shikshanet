@@ -10,7 +10,43 @@ const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-const Student = require('./models/student');
+// Create Student model with student database connection
+const studentSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  phone: { type: String, required: true, unique: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  assignedTests: [{
+    testName: String,
+    subject: String,
+    courseName: String,
+    dueDate: String,
+    fileUrl: String,
+    fileName: String,
+    teacherId: String,
+    teacherName: String,
+    assignedDate: { type: Date, default: Date.now },
+    status: { type: String, enum: ['assigned', 'completed', 'overdue'], default: 'assigned' }
+  }]
+}, { timestamps: true });
+
+const testAssignmentSchema = new mongoose.Schema({
+  testName: { type: String, required: true, trim: true },
+  subject: { type: String, required: true, trim: true },
+  courseName: { type: String, required: true, trim: true },
+  dueDate: { type: String, required: true },
+  fileUrl: { type: String, required: true },
+  fileName: { type: String, required: true },
+  teacherId: { type: String, required: true },
+  teacherName: { type: String, required: true },
+  assignedDate: { type: Date, default: Date.now },
+  studentPhone: { type: String, required: true },
+  studentId: { type: String, required: true },
+  status: { type: String, enum: ['assigned', 'completed', 'overdue'], default: 'assigned' }
+}, { timestamps: true });
+
+// Create models after connection is established
+let StudentModel, TestAssignmentModel;
 dotenv.config();
 
 const accountSid = "ACf7688481cac5cc8144b00fb7b87d5044";
@@ -34,10 +70,22 @@ const uploadsDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
-// --- MongoDB Connection ---
+// --- MongoDB Connections ---
+// Teacher database connection
 mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
-  .then(() => console.log('✅ Connected to MongoDB Atlas'))
-  .catch(err => console.error(' ❌ MongoDB connection error:', err));
+  .then(() => console.log('✅ Connected to Teacher MongoDB Atlas'))
+  .catch(err => console.error(' ❌ Teacher MongoDB connection error:', err));
+
+// Student database connection
+const studentMongoose = require('mongoose');
+const studentConnection = studentMongoose.createConnection("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/studentsDB");
+
+studentConnection.on('connected', () => {
+  console.log('✅ Connected to Student MongoDB Atlas');
+  StudentModel = studentConnection.model('Student', studentSchema);
+  TestAssignmentModel = studentConnection.model('TestAssignment', testAssignmentSchema);
+});
+studentConnection.on('error', (err) => console.error('❌ Student MongoDB connection error:', err));
 
 // --- JWT Auth Middleware ---
 const auth = (req, res, next) => {
@@ -68,6 +116,12 @@ const studentAuth = (req, res, next) => {
   }
   next();
 };
+app.get('/register_student', (req, res) => {
+  console.log('Register student route accessed');
+  // Don't redirect if already logged in - allow registration of new accounts
+  res.render('register_student');
+});
+
 app.get('/login_student', studentAuth, (req, res) => {
   if (res.locals.student) return res.redirect('/studentdash');
   res.render('login_student', { error: null });
@@ -75,12 +129,17 @@ app.get('/login_student', studentAuth, (req, res) => {
 app.post('/login_student', async (req, res) => {
   const { phone, password } = req.body;
   try {
-    const student = await Student.findOne({ phone });
+    if (!StudentModel) {
+      return res.render('login_student', { error: 'Database not ready. Please try again.' });
+    }
+    
+    const student = await StudentModel.findOne({ phone });
     if (!student) return res.render('login_student', { error: 'Student not found' });
     if (student.password !== password) return res.render('login_student', { error: 'Invalid password' });
 
+    console.log('Student login successful:', student.name, 'ID:', student._id);
     const token = jwt.sign(
-      { id: student._id, name: student.name, email: student.email,phone:student.phone },
+      { id: student._id, name: student.name, email: student.email, phone: student.phone },
       JWT_SECRET,
       { expiresIn: '2h' }
     );
@@ -97,9 +156,45 @@ app.get('/logout_student', (req, res) => {
   res.redirect('/login_student');
 });
 // --- ROUTES ---
-app.get('/studentdash', studentAuth, (req, res) => {
+app.get('/studentdash', studentAuth, async (req, res) => {
   if (!res.locals.student) return res.redirect('/login_student');
-  res.render('studentdash', { student: res.locals.student });
+  try {
+    if (!StudentModel) {
+      console.log('StudentModel not ready, using fallback data');
+      // Create a fallback student object with assignedTests array
+      const fallbackStudent = {
+        ...res.locals.student,
+        assignedTests: []
+      };
+      return res.render('studentdash', { student: fallbackStudent });
+    }
+    
+    console.log('Looking for student with ID:', res.locals.student.id);
+    const student = await StudentModel.findById(res.locals.student.id);
+    if (!student) {
+      console.log('Student not found in database, using fallback data');
+      console.log('Available students in database:');
+      const allStudents = await StudentModel.find({});
+      console.log('Total students:', allStudents.length);
+      allStudents.forEach(s => console.log(`- ${s.name} (${s.phone}) - ID: ${s._id}`));
+      
+      const fallbackStudent = {
+        ...res.locals.student,
+        assignedTests: []
+      };
+      return res.render('studentdash', { student: fallbackStudent });
+    }
+    
+    res.render('studentdash', { student: student });
+  } catch (err) {
+    console.error('Error fetching student data:', err);
+    // Create a fallback student object with assignedTests array
+    const fallbackStudent = {
+      ...res.locals.student,
+      assignedTests: []
+    };
+    res.render('studentdash', { student: fallbackStudent });
+  }
 });
 app.get('/dash', auth, (req, res) => {
   if (!res.locals.teacher) return res.redirect('/login');
@@ -107,6 +202,16 @@ app.get('/dash', auth, (req, res) => {
 });
 
 app.get('/', (req, res) => res.render('land'));
+
+// Test route
+app.get('/test-route', (req, res) => {
+  res.json({ message: 'Server is working!', timestamp: new Date() });
+});
+
+// Demo page for testing functionality
+app.get('/test-demo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'test-demo.html'));
+});
 
 // ✅ UPLOAD PAGE (HTML + JS)
 app.get('/upload', (req, res) => {
@@ -439,7 +544,109 @@ app.post("/send-sms", async (req, res) => {
   }
 });
 
+// --- NEW ROUTE: Automatic Test Assignment ---
+app.post('/assign-test', auth, async (req, res) => {
+  if (!res.locals.teacher) return res.status(401).json({ success: false, error: 'Unauthorized' });
+  
+  try {
+    if (!StudentModel || !TestAssignmentModel) {
+      return res.status(503).json({ success: false, error: 'Database not ready. Please try again.' });
+    }
 
+    const { testName, courseName, dueDate, fileUrl, fileName, studentPhone } = req.body;
+    
+    if (!testName || !courseName || !fileUrl || !fileName || !studentPhone) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    
+    // Due date is optional - use default if not provided
+    const finalDueDate = dueDate || 'No due date';
+
+    // Check if student exists with the given phone number
+    console.log('Looking for student with phone:', studentPhone);
+    const student = await StudentModel.findOne({ phone: studentPhone });
+    if (!student) {
+      console.log('Student not found with phone:', studentPhone);
+      return res.status(404).json({ success: false, error: 'No student found with this number.' });
+    }
+    console.log('Found student:', student.name, 'with ID:', student._id);
+
+    // Create test assignment data
+    const testAssignment = {
+      testName,
+      subject: courseName, // Using courseName as subject
+      courseName,
+      dueDate: finalDueDate,
+      fileUrl,
+      fileName,
+      teacherId: res.locals.teacher.id,
+      teacherName: res.locals.teacher.username,
+      studentPhone,
+      studentId: student._id.toString()
+    };
+
+    // Add test to student's assignedTests array
+    student.assignedTests.push(testAssignment);
+    await student.save();
+
+    // Also create a separate test assignment record for tracking
+    const testAssignmentRecord = new TestAssignmentModel(testAssignment);
+    await testAssignmentRecord.save();
+
+    console.log(`Test "${testName}" assigned to student ${student.name} (${studentPhone})`);
+    
+    res.json({ 
+      success: true, 
+      message: `Test assigned successfully to ${student.name}`,
+      studentName: student.name 
+    });
+
+  } catch (err) {
+    console.error('Error assigning test:', err);
+    res.status(500).json({ success: false, error: 'Server error during test assignment' });
+  }
+});
+
+// --- TEST ROUTE: Create test student (for testing purposes) ---
+app.post('/create-test-student', async (req, res) => {
+  try {
+    if (!StudentModel) {
+      return res.status(503).json({ success: false, error: 'Database not ready. Please try again.' });
+    }
+
+    const { name, phone, email, password } = req.body;
+    
+    if (!name || !phone || !email || !password) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    // Check if student already exists
+    const existingStudent = await StudentModel.findOne({ phone });
+    if (existingStudent) {
+      return res.status(400).json({ success: false, error: 'Student with this phone number already exists' });
+    }
+
+    const student = new StudentModel({
+      name,
+      phone,
+      email,
+      password,
+      assignedTests: []
+    });
+
+    await student.save();
+    
+    res.json({ 
+      success: true, 
+      message: `Test student ${name} created successfully`,
+      studentId: student._id 
+    });
+
+  } catch (err) {
+    console.error('Error creating test student:', err);
+    res.status(500).json({ success: false, error: 'Server error during student creation' });
+  }
+});
 
 // Start server
 const PORT = process.env.PORT || 8000;

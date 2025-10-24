@@ -963,46 +963,109 @@ body {
       return;
     }
 
-    // Send SMS to selected students
+    // Get form data
+    const testName = document.getElementById('test-name').value.trim();
+    const courseName = document.getElementById('course-name').value;
+    const dueDate = document.getElementById('due-date').value.trim();
+    const fileName = document.getElementById('pdfFile').files[0]?.name || 'test.pdf';
+
+    // Detailed validation with specific error messages
+    if (!testName) {
+      alert("Please enter a test name!");
+      document.getElementById('test-name').focus();
+      return;
+    }
+    
+    if (!courseName) {
+      alert("Please select a course!");
+      document.getElementById('course-name').focus();
+      return;
+    }
+    
+    // Due date is now optional - use a default if not provided
+    const finalDueDate = dueDate || 'No due date';
+
+    // Assign tests and send SMS
     try {
       assignButton.disabled = true;
-      assignButton.textContent = "Sending...";
+      assignButton.textContent = "Assigning...";
 
-      const recipients = selectedStudents.map(student => student.phone);
-      const message = `Hi! A new test has been assigned to you. View it here: ${window.uploadedFileUrl}`;
+      const assignmentResults = [];
+      const successfulAssignments = [];
+      const failedAssignments = [];
 
-      console.log('Sending SMS to:', recipients);
-      console.log('Message:', message);
+      // Process each selected student
+      for (const student of selectedStudents) {
+        try {
+          // First, assign the test to the student
+          const assignResponse = await fetch('/assign-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              testName,
+              courseName,
+              dueDate: finalDueDate,
+              fileUrl: window.uploadedFileUrl,
+              fileName,
+              studentPhone: student.phone
+            })
+          });
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
-      const response = await fetch('/send-sms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipients, message }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      const result = await response.json();
-      
-      console.log('SMS Response:', result);
-      
-      if (result.success) {
-        alert(`Test assigned successfully! SMS sent to ${selectedStudents.length} student(s).`);
-      } else {
-        console.error('SMS failed:', result);
-        alert(`SMS sending failed. ${result.failed ? `Failed numbers: ${result.failed.join(', ')}` : 'Please try again.'}`);
+          const assignResult = await assignResponse.json();
+          
+          if (assignResult.success) {
+            successfulAssignments.push(student);
+            console.log(`Test assigned to ${student.name}`);
+          } else {
+            failedAssignments.push({ student, error: assignResult.error });
+            console.error(`Failed to assign test to ${student.name}:`, assignResult.error);
+          }
+        } catch (err) {
+          failedAssignments.push({ student, error: err.message });
+          console.error(`Error assigning test to ${student.name}:`, err);
+        }
       }
+
+      // Send SMS to successfully assigned students
+      if (successfulAssignments.length > 0) {
+        const recipients = successfulAssignments.map(student => student.phone);
+        const message = `Hi! A new test "${testName}" has been assigned to you. View it here: ${window.uploadedFileUrl}`;
+
+        console.log('Sending SMS to:', recipients);
+        console.log('Message:', message);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+        const smsResponse = await fetch('/send-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipients, message }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const smsResult = await smsResponse.json();
+        
+        console.log('SMS Response:', smsResult);
+      }
+
+      // Show results
+      let resultMessage = `Test assignment completed!\n\n`;
+      resultMessage += `✅ Successfully assigned to ${successfulAssignments.length} student(s)\n`;
+      
+      if (failedAssignments.length > 0) {
+        resultMessage += `❌ Failed to assign to ${failedAssignments.length} student(s):\n`;
+        failedAssignments.forEach(failure => {
+          resultMessage += `- ${failure.student.name}: ${failure.error}\n`;
+        });
+      }
+
+      alert(resultMessage);
+
     } catch (error) {
-      console.error('Error assigning test:', error);
-      if (error.name === 'AbortError') {
-        alert('SMS request timed out. Please check your internet connection and try again.');
-      } else {
-        alert(`Error assigning test: ${error.message}`);
-      }
+      console.error('Error in assignment process:', error);
+      alert(`Error during assignment: ${error.message}`);
     } finally {
       assignButton.disabled = false;
       assignButton.textContent = "Assign Test";

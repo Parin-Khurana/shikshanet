@@ -343,7 +343,7 @@
           <li class="nav-item"><a class="nav-link" href="yt.html">Learn</a></li>
         </ul>
         <div class="profile-section">
-          <span><%= student.name%></span>
+          <span><%= student ? student.name : 'Student' %></span>
           <div class="profile-icon"></div>
         </div>
       </div>
@@ -353,7 +353,7 @@
 
     <div class="container">
         <div class="greeting">
-            <h1>Hi! <%= student.name%></h1>
+            <h1>Hi! <%= student ? student.name : 'Student' %></h1>
             <p>Manage your courses, track student progress, and access teaching resources.</p>
         </div>
 
@@ -387,8 +387,15 @@
                         <i class="fas fa-user-check"></i>
                     </div>
                 </div>
-                <div class="stat-number">1</div>
-                <div class="stat-subtitle">due dd/mm/yyy</div>
+                <div class="stat-number"><%= (student && student.assignedTests) ? student.assignedTests.length : 0 %></div>
+                <div class="stat-subtitle">
+                    <% if (student && student.assignedTests && student.assignedTests.length > 0) { %>
+                        <% const upcomingTests = student.assignedTests.filter(test => new Date(test.dueDate.split('-').reverse().join('-')) > new Date()).length; %>
+                        <%= upcomingTests %> upcoming
+                    <% } else { %>
+                        no tests assigned
+                    <% } %>
+                </div>
             </div>
         </div>
 
@@ -436,12 +443,37 @@
                 </div>
 
                 <div class="tab-pane">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-file-alt"></i>
+                    <div class="tab-title">Assigned Tests</div>
+                    <div class="tab-subtitle">Your test assignments</div>
+                    <% if (student && student.assignedTests && student.assignedTests.length > 0) { %>
+                        <div class="materials-grid">
+                            <% student.assignedTests.forEach(test => { %>
+                                <div class="material-card">
+                                    <div class="material-header">
+                                        <div class="material-title"><%= test.testName %></div>
+                                        <button class="ask-doubt-btn">View Test</button>
+                                    </div>
+                                    <div class="material-code">Due: <%= test.dueDate %></div>
+                                    <div class="material-tag"><%= test.courseName %></div>
+                                    <div class="material-file">
+                                        <a href="<%= test.fileUrl %>" target="_blank" style="color: #333; text-decoration: none;">
+                                            <%= test.fileName %>
+                                        </a>
+                                    </div>
+                                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                                        Assigned by: <%= test.teacherName %>
+                                    </div>
+                                </div>
+                            <% }) %>
                         </div>
-                        <p>No tests assigned yet</p>
-                    </div>
+                    <% } else { %>
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <p>No tests assigned yet</p>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
