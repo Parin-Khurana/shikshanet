@@ -127,9 +127,10 @@ app.post('/upload', async (req, res) => {
         const file = req.files.file;
 
         // allow only PDFs for safety
-        if (file.mimetype !== 'application/pdf') {
-            return res.status(400).json({ success: false, error: 'Only PDF files are allowed' });
-        }
+        const allowedTypes = ['application/pdf', 'video/mp4', 'video/quicktime'];
+if (!allowedTypes.includes(file.mimetype)) {
+    return res.status(400).json({ success: false, error: 'Only PDF and video files are allowed' });
+}
 
         if (file.size > 10 * 1024 * 1024) {
             return res.status(400).json({ success: false, error: 'File too large (max 10MB)' });

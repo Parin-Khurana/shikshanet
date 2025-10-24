@@ -506,7 +506,7 @@ select, .date-input {
   </select>
 </div>
 
-<input type="file" id="material-upload" multiple style="display:none;" />
+<input type="file" id="material-upload" multiple style="display:none;" accept=".pdf,.mp4,.jpg,.jpeg,.png,.gif,.webp"/>
 
 
 
@@ -647,7 +647,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const materialSelect = document.getElementById("material-select");
     const fileInput = document.getElementById("material-upload");
 
-    // Dropdown change event
+    // ----- Material dropdown change -----
     materialSelect.addEventListener("change", function () {
         const value = materialSelect.value;
         if (value === "browse") {
@@ -657,8 +657,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // File input change
-    fileInput.addEventListener("change", function () {
+    // ----- Material file input change -----
+    fileInput.addEventListener("change", async function () {
         const files = Array.from(fileInput.files);
         if (files.length === 0) return;
 
@@ -666,95 +666,89 @@ document.addEventListener("DOMContentLoaded", function () {
         const existingOptions = Array.from(materialSelect.options).filter(opt => opt.classList.contains("uploaded-file"));
         existingOptions.forEach(opt => opt.remove());
 
-        // Add new options
-        files.forEach(file => {
+        // Upload files one by one
+        for (const file of files) {
+            if (!['application/pdf', 'video/mp4'].includes(file.type)) {
+                alert(`File type not allowed: ${file.name}`);
+                continue;
+            }
+
+            const fileUrl = await uploadMaterial(file);
+            if (!fileUrl) {
+                alert(`Upload failed: ${file.name}`);
+                continue;
+            }
+
             const option = document.createElement("option");
-            option.value = file.name;
+            option.value = fileUrl; // Use uploaded file URL
             option.textContent = file.name;
             option.classList.add("uploaded-file");
             materialSelect.appendChild(option);
-        });
-
-        materialSelect.value = files[0].name;
-    });
-
-    // Assignment button toggle
-    // Assignment button toggle + send material logic
-const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
-assignButtons.forEach(button => {
-    button.addEventListener('click', async function () {
-        assignButtons.forEach(btn => {
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-secondary');
-        });
-        this.classList.remove('btn-secondary');
-        this.classList.add('btn-primary');
-
-        // 1️⃣ Get selected section
-        const sectionIndex = classSelect.value;
-        const section = sectionsData[sectionIndex];
-        if (!section || !section.students.length) {
-            alert("No students in this class!");
-            return;
         }
 
-        // 2️⃣ Get selected file name
-        const materialSelect = document.getElementById("material-select");
-        const fileName = materialSelect.value;
-        const fileInput = document.getElementById("material-upload");
+        // Select first successfully uploaded file
+        const firstOption = materialSelect.querySelector(".uploaded-file");
+        if (firstOption) materialSelect.value = firstOption.value;
+    });
 
-        let fileUrl = "";
+    // ----- Assignment button click -----
+    const assignButtons = document.querySelectorAll('.assignment-buttons .btn');
+    assignButtons.forEach(button => {
+        button.addEventListener('click', async function () {
+            assignButtons.forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            });
+            this.classList.remove('btn-secondary');
+            this.classList.add('btn-primary');
 
-        // 3️⃣ If "upload" file exists locally, upload it first
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            fileUrl = await uploadMaterial(file);
-            if (!fileUrl) {
-                alert("File upload failed!");
+            // 1️⃣ Selected section
+            const sectionIndex = classSelect.value;
+            const section = sectionsData[sectionIndex];
+            if (!section || !section.students.length) {
+                alert("No students in this class!");
                 return;
             }
-        } else if (fileName && !["", "browse", "upload"].includes(fileName)) {
-            // Already uploaded material name (optional)
-            fileUrl = `/uploads/${fileName}`;
-        } else {
-            alert("Please select or upload a material first!");
-            return;
-        }
 
-        // 4️⃣ Prepare recipients
-        const recipients =
-            this.textContent.includes("whole class")
+            // 2️⃣ Selected file
+            const fileName = materialSelect.value;
+            if (!fileName || ["", "browse", "upload"].includes(fileName)) {
+                alert("Please select or upload a material first!");
+                return;
+            }
+            const fileUrl = fileName; // Already set as URL in option.value
+
+            // 3️⃣ Determine recipients
+            const recipients = this.textContent.includes("whole class")
                 ? section.students.map(s => s.phone)
-                : section.students
-                    .filter(s => s.status === "ABSENT")
-                    .map(s => s.phone);
+                : section.students.filter(s => s.status === "ABSENT").map(s => s.phone);
 
-        if (!recipients.length) {
-            alert("No recipients found!");
-            return;
-        }
+            if (!recipients.length) {
+                alert("No recipients found!");
+                return;
+            }
 
-        // 5️⃣ Send SMS via backend
-        try {
-            const res = await fetch("/send-sms", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    recipients,
-                    message: `Hi! A new material has been assigned to you. View it here: ${fileUrl}`
-                }),
-            });
-            const data = await res.json();
-            if (data.success) alert("SMS sent successfully!");
-            else alert("Some messages failed.");
-        } catch (err) {
-            console.error("Error sending SMS:", err);
-            alert("Error sending SMS. Check console for details.");
-        }
+            // 4️⃣ Send SMS
+            try {
+                const res = await fetch("/send-sms", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        recipients,
+                        message: `Hi! A new material has been assigned to you. View it here: ${fileUrl}`
+                    }),
+                });
+                const data = await res.json();
+                if (data.success) alert("SMS sent successfully!");
+                else alert("Some messages failed.");
+            } catch (err) {
+                console.error("Error sending SMS:", err);
+                alert("Error sending SMS. Check console for details.");
+            }
+        });
     });
-});
 
-    // Menu toggle
+    // ----- Menu toggle -----
     const menuToggle = document.querySelector('.menu-toggle');
     const nav = document.querySelector('nav');
     menuToggle.addEventListener('click', () => {
@@ -762,7 +756,7 @@ assignButtons.forEach(button => {
     });
 });
 
-// ----- Section Rendering -----
+// ----- Render students for selected section -----
 function renderStudents(sectionIndex) {
     const section = sectionsData[sectionIndex];
     studentsContainer.innerHTML = "";
@@ -789,15 +783,13 @@ function renderStudents(sectionIndex) {
     });
 }
 
-// Initially render first section
+// Initial render
 if (sectionsData.length) renderStudents(0);
-
-// Change students when dropdown changes
 classSelect.addEventListener("change", () => {
     renderStudents(classSelect.value);
 });
 
-// ----- Upload Area Logic -----
+// ----- Upload Area (OCR) -----
 uploadArea.addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -810,18 +802,12 @@ uploadArea.addEventListener('click', () => {
         formData.append('file', file);
 
         try {
-            const res = await fetch('/class', {
-                method: 'POST',
-                body: formData
-            });
+            const res = await fetch('/class', { method: 'POST', body: formData });
             const data = await res.json();
-
             if (data.error) {
                 alert("OCR failed: " + data.error);
                 return;
             }
-
-            // Populate students from OCR
             populateStudents(data.students, data.date);
         } catch (err) {
             console.error(err);
@@ -846,7 +832,7 @@ uploadArea.addEventListener('drop', function(e) {
     console.log('Files dropped:', e.dataTransfer.files);
 });
 
-// ----- Function to populate OCR students -----
+// ----- Upload material function -----
 async function uploadMaterial(file) {
     try {
         const formData = new FormData();
@@ -859,7 +845,7 @@ async function uploadMaterial(file) {
         const data = await res.json();
 
         if (data.fileUrl) {
-            return data.fileUrl; // ✅ use this URL in SMS
+            return data.fileUrl;
         } else {
             console.error("Upload error:", data);
             return null;
@@ -869,6 +855,11 @@ async function uploadMaterial(file) {
         return null;
     }
 }
+
+
+
+
+// ----- Populate OCR students -----
 function populateStudents(students, date) {
     studentsContainer.innerHTML = "";
 
@@ -906,37 +897,10 @@ function populateStudents(students, date) {
         else absentCount++;
     });
 
-    // Update badge counts
     const presentBadge = document.querySelector('.badge-present');
     const absentBadge = document.querySelector('.badge-absent');
     if (presentBadge) presentBadge.textContent = `Present : ${presentCount}`;
     if (absentBadge) absentBadge.textContent = `Absent : ${absentCount}`;
-
-    // Update date
-    const dateElem = document.querySelector('.card .students-scroll')?.previousElementSibling?.querySelector('span');
-    if (dateElem) dateElem.textContent = date;
-}
-
-// ----- Send SMS to whole class -----
-async function sendToWholeClass(sectionIndex) {
-    const section = sectionsData[sectionIndex];
-    if (!section || !section.students.length) return;
-
-    const phones = section.students.map(s => s.phone);
-
-    try {
-        const res = await fetch('/send-sms', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recipients: phones, message: "Hi! You have a new material assigned." })
-        });
-        const data = await res.json();
-        if (data.success) alert("Messages sent successfully!");
-        else alert("Some messages could not be sent: " + (data.failed || []).join(", "));
-    } catch (err) {
-        console.error("Error sending SMS:", err);
-        alert("Error sending SMS. Check console for details.");
-    }
 }
 </script>
 
