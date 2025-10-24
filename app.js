@@ -10,7 +10,7 @@ const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-
+const Student = require('./models/student');
 dotenv.config();
 
 const accountSid = "ACf7688481cac5cc8144b00fb7b87d5044";
@@ -37,7 +37,7 @@ app.use('/uploads', express.static(uploadsDir));
 // --- MongoDB Connection ---
 mongoose.connect("mongodb+srv://rishikgoyal:rishikgoyal@cluster0.msvexze.mongodb.net/teachersDB")
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+  .catch(err => console.error(' ❌ MongoDB connection error:', err));
 
 // --- JWT Auth Middleware ---
 const auth = (req, res, next) => {
@@ -54,9 +54,53 @@ const auth = (req, res, next) => {
   }
   next();
 };
+const studentAuth = (req, res, next) => {
+  const token = req.cookies.studentToken;
+  if (!token) {
+    res.locals.student = null;
+    return next();
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.locals.student = decoded;
+  } catch (err) {
+    res.locals.student = null;
+  }
+  next();
+};
+app.get('/login_student', studentAuth, (req, res) => {
+  if (res.locals.student) return res.redirect('/studentdash');
+  res.render('login_student', { error: null });
+});
+app.post('/login_student', async (req, res) => {
+  const { phone, password } = req.body;
+  try {
+    const student = await Student.findOne({ phone });
+    if (!student) return res.render('login_student', { error: 'Student not found' });
+    if (student.password !== password) return res.render('login_student', { error: 'Invalid password' });
 
+    const token = jwt.sign(
+      { id: student._id, name: student.name, email: student.email,phone:student.phone },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    res.cookie('studentToken', token, { httpOnly: true });
+    res.redirect('/studentdash');
+  } catch (err) {
+    console.error(err);
+    res.render('login_student', { error: 'Server error' });
+  }
+});
+app.get('/logout_student', (req, res) => {
+  res.clearCookie('studentToken');
+  res.redirect('/login_student');
+});
 // --- ROUTES ---
-
+app.get('/studentdash', studentAuth, (req, res) => {
+  if (!res.locals.student) return res.redirect('/login_student');
+  res.render('studentdash', { student: res.locals.student });
+});
 app.get('/dash', auth, (req, res) => {
   if (!res.locals.teacher) return res.redirect('/login');
   res.render('dash', { teacher: res.locals.teacher });
@@ -376,7 +420,7 @@ app.post("/send-sms", async (req, res) => {
     return res.json({ success: true });
   } else {
     return res.json({ success: false, failed: failedNumbers });
-  }
+  } 
 });
 
 
