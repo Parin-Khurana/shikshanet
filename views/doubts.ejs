@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Doubts</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Geist", sans-serif;
+  background-color: #FBF9F7;
+  color: #000000;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1650px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.navbar {
+  background-color: #FBF9F7;
+  border-bottom: 1px solid #FBF9F7;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  width: 100%;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.nav-link {
+  color: #333;
+  margin: 0 1rem;
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #ddd;
+  border-radius: 50%;
+}
+
+.main {
+  padding: 2rem 0;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.page-description {
+  font-size: 18px;
+  color: #737373;
+}
+
+.doubt-stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #737373;
+}
+
+.icon-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orange-bg {
+  background-color: #fef2f2;
+}
+
+.green-bg {
+  background-color: #ecfdf5;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+}
+
+.orange-border {
+  border-left: 4px solid #f97316;
+}
+
+.green-border {
+  border-left: 4px solid #22c55e;
+}
+
+.doubts-list-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.doubt-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background-color: #ffffff;
+}
+
+.doubt-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.in-progress-item {
+  border-left: 4px solid #f59e0b;
+}
+
+.resolved-item {
+  border-left: 4px solid #22c55e;
+}
+
+.doubt-content {
+  flex: 1;
+  margin-right: 16px;
+}
+
+.doubt-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #000000;
+}
+
+.doubt-text {
+  font-size: 14px;
+  color: #737373;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.doubt-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.meta-label {
+  color: #737373;
+  font-weight: 400;
+}
+
+.meta-value {
+  color: #000000;
+  font-weight: 500;
+  margin-right: 16px;
+}
+
+.doubt-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.status-tag {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pending-tag {
+  background-color: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.in-progress-tag {
+  background-color: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
+.resolved-tag {
+  background-color: #ecfdf5;
+  color: #22c55e;
+  border: 1px solid #a7f3d0;
+}
+
+.view-details-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #000000;
+  margin-top: 13px;
+}
+
+.view-details-btn:hover {
+  background-color: #f5f5f5;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.response-form {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.response-form textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.response-form select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.response-form button {
+  background-color: #3b82f6;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.response-form button:hover {
+  background-color: #2563eb;
+}
+
+@media (max-width: 992px) {
+  .doubt-stats-container {
+    grid-template-columns: 1fr;
+  }
+  .doubt-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .doubt-content {
+    margin-bottom: 16px;
+    margin-right: 0;
+  }
+  .doubt-actions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .doubts-list-container {
+    max-height: 70vh;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-title {
+    font-size: 40px;
+  }
+  .doubt-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .meta-value {
+    margin-right: 0;
+  }
+}
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/dash">ShikshNet</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="nav navbar-nav mx-auto">
+          <li class="nav-item"><a class="nav-link" href="/dash">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="/courses">Courses</a></li>
+          <li class="nav-item"><a class="nav-link" href="/class">Classes</a></li>
+          <li class="nav-item"><a class="nav-link" href="/test">Tests</a></li>
+        </ul>
+        <div class="profile-section">
+          <span><%= teacher ? teacher.username : 'Teacher' %></span>
+          <div class="profile-icon"></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">Student Doubts</h1>
+                <p class="page-description">Manage and resolve student questions</p>
+            </div>
+
+            <div class="doubt-stats-container">
+                <div class="stat-card orange-border">
+                    <div class="stat-card-header">
+                        <span class="stat-label">Pending</span>
+                        <div class="icon-placeholder orange-bg">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        </div>
+                    </div>
+                    <div class="stat-value">
+                        <% 
+                            const pendingCount = doubts ? doubts.filter(d => d.status === 'pending').length : 0;
+                        %>
+                        <%= pendingCount %>
+                    </div>
+                </div>
+
+                <div class="stat-card orange-border">
+                    <div class="stat-card-header">
+                        <span class="stat-label">In Progress</span>
+                        <div class="icon-placeholder orange-bg">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M15 3h6v6"></path><path d="M21 3L15 9"></path><path d="M21 15v6h-6"></path><path d="M18 21L12 15"></path><path d="M9 21H3v-6"></path><path d="M3 9v-6h6"></path><path d="M9 3L3 9"></path></svg>
+                        </div>
+                    </div>
+                    <div class="stat-value">
+                        <% 
+                            const inProgressCount = doubts ? doubts.filter(d => d.status === 'in_progress').length : 0;
+                        %>
+                        <%= inProgressCount %>
+                    </div>
+                </div>
+
+                <div class="stat-card green-border">
+                    <div class="stat-card-header">
+                        <span class="stat-label">resolved</span>
+                        <div class="icon-placeholder green-bg">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17L4 12"></path></svg>
+                        </div>
+                    </div>
+                    <div class="stat-value">
+                        <% 
+                            const resolvedCount = doubts ? doubts.filter(d => d.status === 'resolved').length : 0;
+                        %>
+                        <%= resolvedCount %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doubts-list-container">
+                <% if (doubts && doubts.length > 0) { %>
+                    <% doubts.forEach(doubt => { %>
+                        <div class="doubt-item <%= doubt.status === 'pending' ? '' : doubt.status === 'in_progress' ? 'in-progress-item' : 'resolved-item' %>">
+                            <div class="doubt-content">
+                                <h3 class="doubt-title"><%= doubt.doubtTitle %></h3>
+                                <p class="doubt-text"><%= doubt.doubtDescription %></p>
+                                <div class="doubt-meta">
+                                    <span class="meta-label">Student:</span><span class="meta-value"><%= doubt.studentName %></span>
+                                    <span class="meta-label">Subject:</span><span class="meta-value"><%= doubt.subject %></span>
+                                    <span class="meta-label">Course:</span><span class="meta-value"><%= doubt.courseName %></span>
+                                    <span class="meta-label">Priority:</span><span class="meta-value"><%= doubt.priority %></span>
+                                    <span class="meta-label">Type:</span><span class="meta-value"><%= doubt.doubtType %></span>
+                                </div>
+                                <% if (doubt.teacherResponse) { %>
+                                    <div class="teacher-response" style="margin-top: 12px; padding: 12px; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                                        <strong>Teacher Response:</strong>
+                                        <p style="margin-top: 8px; color: #374151;"><%= doubt.teacherResponse %></p>
+                                        <small style="color: #6b7280;">Responded on: <%= new Date(doubt.responseDate).toLocaleDateString() %></small>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="doubt-actions">
+                                <span class="status-tag <%= doubt.status === 'pending' ? 'pending-tag' : doubt.status === 'in_progress' ? 'in-progress-tag' : 'resolved-tag' %>">
+                                    <%= doubt.status.charAt(0).toUpperCase() + doubt.status.slice(1).replace('_', ' ') %>
+                                </span>
+                                <button class="btn view-details-btn" onclick="openDoubtModal('<%= doubt._id %>')">View Details</button>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div style="text-align: center; padding: 40px; color: #6b7280;">
+                        <h3>No doubts found</h3>
+                        <p>Students haven't asked any questions yet.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <!-- Doubt Details Modal -->
+    <div id="doubtModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDoubtModal()">&times;</span>
+            <div id="modalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Store doubts data for JavaScript access
+        const doubtsData = <%- JSON.stringify(doubts || []) %>;
+        
+        function openDoubtModal(doubtId) {
+            const doubt = doubtsData.find(d => d._id === doubtId);
+            if (!doubt) return;
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h2>${doubt.doubtTitle}</h2>
+                <div style="margin: 16px 0;">
+                    <p><strong>Student:</strong> ${doubt.studentName}</p>
+                    <p><strong>Subject:</strong> ${doubt.subject}</p>
+                    <p><strong>Course:</strong> ${doubt.courseName}</p>
+                    <p><strong>Priority:</strong> ${doubt.priority}</p>
+                    <p><strong>Type:</strong> ${doubt.doubtType}</p>
+                    <p><strong>Status:</strong> ${doubt.status}</p>
+                    <p><strong>Asked on:</strong> ${new Date(doubt.createdAt).toLocaleDateString()}</p>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h3>Question:</h3>
+                    <p style="background-color: #f5f5f5; padding: 12px; border-radius: 6px;">${doubt.doubtDescription}</p>
+                </div>
+                
+                ${doubt.teacherResponse ? `
+                    <div style="margin: 20px 0;">
+                        <h3>Your Response:</h3>
+                        <p style="background-color: #e0f2fe; padding: 12px; border-radius: 6px;">${doubt.teacherResponse}</p>
+                        <small style="color: #666;">Responded on: ${new Date(doubt.responseDate).toLocaleDateString()}</small>
+                    </div>
+                ` : `
+                    <div class="response-form">
+                        <h3>Respond to Student:</h3>
+                        <form onsubmit="submitResponse(event, '${doubtId}')">
+                            <textarea name="response" placeholder="Enter your response here..." required></textarea>
+                            <select name="status">
+                                <option value="in_progress">Mark as In Progress</option>
+                                <option value="resolved">Mark as Resolved</option>
+                            </select>
+                            <button type="submit">Submit Response</button>
+                        </form>
+                    </div>
+                `}
+            `;
+            
+            document.getElementById('doubtModal').style.display = 'block';
+        }
+        
+        function closeDoubtModal() {
+            document.getElementById('doubtModal').style.display = 'none';
+        }
+        
+        function submitResponse(event, doubtId) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const response = formData.get('response');
+            const status = formData.get('status');
+            
+            fetch('/respond-doubt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    doubtId: doubtId,
+                    response: response,
+                    status: status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Response submitted successfully!');
+                    closeDoubtModal();
+                    location.reload(); // Refresh to show updated data
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error submitting response');
+            });
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('doubtModal');
+            if (event.target === modal) {
+                closeDoubtModal();
+            }
+        }
+    </script>
+</body>
+</html>

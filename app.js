@@ -3,6 +3,9 @@ const axios = require('axios');
 const path = require('path');
 const dotenv = require('dotenv');
 const Teacher = require('./models/teacher');
+const { Student, studentSchema } = require('./models/student');
+const { Doubt } = require('./models/doubt');
+const { TestAssignment, testAssignmentSchema } = require('./models/testAssignment');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
@@ -10,8 +13,6 @@ const twilio = require('twilio');
 const fs = require('fs');
 const FormData = require('form-data');
 const fileUpload = require('express-fileupload');
-const { Student, studentSchema } = require('./models/student');
-const { TestAssignment, testAssignmentSchema } = require('./models/testAssignment');
 
 dotenv.config();
 
@@ -1065,6 +1066,201 @@ app.post('/assign-test', auth, async (req, res) => {
     console.error('❌ Error assigning test:', err);
     console.error('❌ Error stack:', err.stack);
     res.status(500).json({ success: false, error: 'Server error while assigning test' });
+  }
+});
+
+// --- DOUBT ROUTES ---
+// GET route to display doubts page for teachers
+app.get('/doubts', auth, async (req, res) => {
+  console.log('=== DOUBTS PAGE LOAD START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ No teacher in locals, redirecting to login');
+    return res.redirect('/login');
+  }
+  
+  try {
+    // Fetch the latest teacher data from database
+    console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+    const teacher = await Teacher.findById(res.locals.teacher.id);
+    if (!teacher) {
+      console.log('❌ Teacher not found in database');
+      return res.status(404).render('error', { message: 'Teacher not found' });
+    }
+    
+    console.log('✅ Teacher found:', teacher.username);
+    
+    // Fetch doubts assigned to this teacher
+    console.log('🔍 Fetching doubts for teacher:', teacher._id);
+    const doubts = await Doubt.find({ teacherName: teacher.username })
+  .sort({ createdAt: -1 });
+    console.log('📚 Found doubts:', doubts.length);
+    
+    console.log('🎨 Rendering doubts page...');
+    res.render('doubts', { 
+      teacher: teacher,
+      doubts: doubts,
+      timestamp: Date.now()
+    });
+    console.log('=== DOUBTS PAGE LOAD SUCCESS ===');
+  } catch (err) {
+    console.error('❌ Error fetching doubts:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).render('error', { message: 'Server error' });
+  }
+});
+
+// POST route for students to ask doubts
+app.post('/ask-doubt', async (req, res) => {
+  console.log('=== ASK DOUBT REQUEST START ===');
+  
+  try {
+    const { 
+      studentId,
+      studentName,
+      studentPhone,
+      studentEmail,
+      teacherId,
+      teacherName,
+      subject,
+      courseName,
+      doubtTitle,
+      doubtDescription,
+      doubtType,
+      priority
+    } = req.body;
+    
+    console.log('📝 Ask doubt request body:', { 
+      studentId,
+      studentName,
+      studentPhone,
+      studentEmail,
+      teacherId,
+      teacherName,
+      subject,
+      courseName,
+      doubtTitle,
+      doubtDescription,
+      doubtType,
+      priority
+    });
+    
+    // Validate required fields
+    if (!studentId || !studentName || !studentPhone || !studentEmail || 
+        !teacherId || !teacherName || !subject || !courseName || 
+        !doubtTitle || !doubtDescription) {
+      console.log('❌ Missing required fields');
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    
+    // Create new doubt
+    const newDoubt = new Doubt({
+      studentId,
+      studentName,
+      studentPhone,
+      studentEmail,
+      teacherId,
+      teacherName,
+      subject,
+      courseName,
+      doubtTitle,
+      doubtDescription,
+      doubtType: doubtType || 'general',
+      priority: priority || 'medium',
+      status: 'pending'
+    });
+    
+    console.log('📚 Creating new doubt:', newDoubt);
+    
+    await newDoubt.save();
+    console.log('✅ Doubt saved successfully');
+    
+    console.log('=== ASK DOUBT REQUEST SUCCESS ===');
+    res.json({
+      success: true,
+      message: 'Doubt submitted successfully',
+      doubtId: newDoubt._id
+    });
+    
+  } catch (err) {
+    console.error('❌ Error asking doubt:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).json({ success: false, error: 'Server error while submitting doubt' });
+  }
+});
+
+// POST route for teachers to respond to doubts
+app.post('/respond-doubt', auth, async (req, res) => {
+  console.log('=== RESPOND DOUBT REQUEST START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ Unauthorized - no teacher in locals');
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  try {
+    const { doubtId, response, status } = req.body;
+    
+    console.log('📝 Respond doubt request body:', { doubtId, response, status });
+    
+    if (!doubtId || !response) {
+      console.log('❌ Missing required fields');
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    
+    // Find the doubt
+    const doubt = await Doubt.findById(doubtId);
+    if (!doubt) {
+      console.log('❌ Doubt not found');
+      return res.status(404).json({ success: false, error: 'Doubt not found' });
+    }
+    
+    // Check if teacher owns this doubt
+    if (doubt.teacherId !== res.locals.teacher.id) {
+      console.log('❌ Teacher does not own this doubt');
+      return res.status(403).json({ success: false, error: 'Unauthorized to respond to this doubt' });
+    }
+    
+    // Update doubt with response
+    doubt.teacherResponse = response;
+    doubt.responseDate = new Date();
+    doubt.status = status || 'resolved';
+    doubt.updatedAt = new Date();
+    
+    console.log('📚 Updating doubt with response:', doubt);
+    
+    await doubt.save();
+    console.log('✅ Doubt response saved successfully');
+    
+    console.log('=== RESPOND DOUBT REQUEST SUCCESS ===');
+    res.json({
+      success: true,
+      message: 'Response submitted successfully'
+    });
+    
+  } catch (err) {
+    console.error('❌ Error responding to doubt:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).json({ success: false, error: 'Server error while responding to doubt' });
+  }
+});
+
+// GET route for students to ask doubts (simple form)
+app.get('/ask-doubt-form', (req, res) => {
+  console.log('=== ASK DOUBT FORM PAGE LOAD START ===');
+  
+  try {
+    // For now, we'll create a simple form that doesn't require authentication
+    // In a real app, you'd want to authenticate students
+    res.render('ask-doubt-form', { 
+      timestamp: Date.now()
+    });
+    console.log('=== ASK DOUBT FORM PAGE LOAD SUCCESS ===');
+  } catch (err) {
+    console.error('❌ Error loading ask doubt form:', err);
+    res.status(500).render('error', { message: 'Server error' });
   }
 });
 

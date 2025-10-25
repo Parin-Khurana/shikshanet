@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask a Doubt</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Geist", sans-serif;
+            background-color: #FBF9F7;
+            color: #000000;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .form-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #000000;
+        }
+
+        .page-description {
+            font-size: 1.1rem;
+            color: #737373;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #000000;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control[type="textarea"] {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: #2563eb;
+        }
+
+        .btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .form-container {
+                padding: 1.5rem;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1 class="page-title">Ask a Doubt</h1>
+            <p class="page-description">Have a question? Submit it here and your teacher will respond!</p>
+            
+            <div id="alertContainer"></div>
+            
+            <form id="doubtForm">
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="studentName" class="form-label">Your Name *</label>
+                            <input type="text" id="studentName" name="studentName" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="studentPhone" class="form-label">Phone Number *</label>
+                            <input type="tel" id="studentPhone" name="studentPhone" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="studentEmail" class="form-label">Email *</label>
+                            <input type="email" id="studentEmail" name="studentEmail" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="teacherName" class="form-label">Teacher Name *</label>
+                            <input type="text" id="teacherName" name="teacherName" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="subject" class="form-label">Subject *</label>
+                            <input type="text" id="subject" name="subject" class="form-control" placeholder="e.g., Mathematics, Physics, Chemistry" required>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="courseName" class="form-label">Course/Class *</label>
+                            <input type="text" id="courseName" name="courseName" class="form-control" placeholder="e.g., Class 10A, Advanced Physics" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="doubtTitle" class="form-label">Question Title *</label>
+                    <input type="text" id="doubtTitle" name="doubtTitle" class="form-control" placeholder="Brief title for your question" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="doubtDescription" class="form-label">Your Question *</label>
+                    <textarea id="doubtDescription" name="doubtDescription" class="form-control" placeholder="Describe your question in detail..." required></textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="doubtType" class="form-label">Question Type</label>
+                            <select id="doubtType" name="doubtType" class="form-control">
+                                <option value="general">General Question</option>
+                                <option value="conceptual">Conceptual</option>
+                                <option value="numerical">Numerical Problem</option>
+                                <option value="assignment">Assignment Help</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select id="priority" name="priority" class="form-control">
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn">Submit Question</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('doubtForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const alertContainer = document.getElementById('alertContainer');
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            // Clear previous alerts
+            alertContainer.innerHTML = '';
+            
+            try {
+                const formData = new FormData(e.target);
+                const doubtData = {
+                    studentName: formData.get('studentName'),
+                    studentPhone: formData.get('studentPhone'),
+                    studentEmail: formData.get('studentEmail'),
+                    teacherName: formData.get('teacherName'),
+                    subject: formData.get('subject'),
+                    courseName: formData.get('courseName'),
+                    doubtTitle: formData.get('doubtTitle'),
+                    doubtDescription: formData.get('doubtDescription'),
+                    doubtType: formData.get('doubtType'),
+                    priority: formData.get('priority'),
+                    // For now, we'll use a default teacher ID - in a real app, you'd look this up
+                    teacherId: 'default-teacher-id',
+                    studentId: 'student-' + Date.now() // Generate a temporary student ID
+                };
+                
+                console.log('Submitting doubt:', doubtData);
+                
+                const response = await fetch('/ask-doubt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(doubtData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Success!</strong> Your question has been submitted successfully. Your teacher will respond soon.
+                        </div>
+                    `;
+                    
+                    // Reset form
+                    e.target.reset();
+                } else {
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-error">
+                            <strong>Error:</strong> ${result.error}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error submitting doubt:', error);
+                alertContainer.innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>Error:</strong> Failed to submit question. Please try again.
+                    </div>
+                `;
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Question';
+            }
+        });
+    </script>
+</body>
+</html>
