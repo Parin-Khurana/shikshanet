@@ -3,50 +3,40 @@ const mongoose = require('mongoose');
 const testAssignmentSchema = new mongoose.Schema({
   testName: {
     type: String,
-    required: true,
     trim: true
   },
   subject: {
     type: String,
-    required: true,
     trim: true
   },
   courseName: {
     type: String,
-    required: true,
     trim: true
   },
   dueDate: {
-    type: String,
-    required: true
+    type: String
   },
   fileUrl: {
-    type: String,
-    required: true
+    type: String
   },
   fileName: {
-    type: String,
-    required: true
+    type: String
   },
   teacherId: {
-    type: String,
-    required: true
+    type: String
   },
   teacherName: {
-    type: String,
-    required: true
+    type: String
   },
   assignedDate: {
     type: Date,
     default: Date.now
   },
   studentPhone: {
-    type: String,
-    required: true
+    type: String
   },
   studentId: {
-    type: String,
-    required: true
+    type: String
   },
   status: {
     type: String,

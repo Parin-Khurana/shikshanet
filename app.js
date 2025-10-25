@@ -13,6 +13,10 @@ const fileUpload = require('express-fileupload');
 const { Student, studentSchema } = require('./models/student');
 const { TestAssignment, testAssignmentSchema } = require('./models/testAssignment');
 
+// Declare StudentModel and TestAssignmentModel globally
+let StudentModel;
+let TestAssignmentModel;
+
 dotenv.config();
 
 const accountSid = "ACf7688481cac5cc8144b00fb7b87d5044";
@@ -617,68 +621,6 @@ app.post("/send-sms", async (req, res) => {
   }
 });
 
-// --- NEW ROUTE: Automatic Test Assignment ---
-app.post('/assign-test', auth, async (req, res) => {
-  if (!res.locals.teacher) return res.status(401).json({ success: false, error: 'Unauthorized' });
-  
-  try {
-    if (!StudentModel || !TestAssignmentModel) {
-      return res.status(503).json({ success: false, error: 'Database not ready. Please try again.' });
-    }
-
-    const { testName, courseName, dueDate, fileUrl, fileName, studentPhone } = req.body;
-    
-    if (!testName || !courseName || !fileUrl || !fileName || !studentPhone) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-    
-    // Due date is optional - use default if not provided
-    const finalDueDate = dueDate || 'No due date';
-
-    // Check if student exists with the given phone number
-    console.log('Looking for student with phone:', studentPhone);
-    const student = await StudentModel.findOne({ phone: studentPhone });
-    if (!student) {
-      console.log('Student not found with phone:', studentPhone);
-      return res.status(404).json({ success: false, error: 'No student found with this number.' });
-    }
-    console.log('Found student:', student.name, 'with ID:', student._id);
-
-    // Create test assignment data
-    const testAssignment = {
-      testName,
-      subject: courseName, // Using courseName as subject
-      courseName,
-      dueDate: finalDueDate,
-      fileUrl,
-      fileName,
-      teacherId: res.locals.teacher.id,
-      teacherName: res.locals.teacher.username,
-      studentPhone,
-      studentId: student._id.toString()
-    };
-
-    // Add test to student's assignedTests array
-    student.assignedTests.push(testAssignment);
-    await student.save();
-
-    // Also create a separate test assignment record for tracking
-    const testAssignmentRecord = new TestAssignmentModel(testAssignment);
-    await testAssignmentRecord.save();
-
-    console.log(`Test "${testName}" assigned to student ${student.name} (${studentPhone})`);
-    
-    res.json({ 
-      success: true, 
-      message: `Test assigned successfully to ${student.name}`,
-      studentName: student.name 
-    });
-
-  } catch (err) {
-    console.error('Error assigning test:', err);
-    res.status(500).json({ success: false, error: 'Server error during test assignment' });
-  }
-});
 
 // --- TEST ROUTE: Create test student (for testing purposes) ---
 app.post('/create-test-student', async (req, res) => {
@@ -1018,13 +960,46 @@ app.post('/assign-test', auth, async (req, res) => {
     
     console.log('✅ Teacher found:', teacher.username);
     
-    // Find students by phone numbers
+    // Find students by phone numbers from teacher's sections
     console.log('🔍 Looking for students with phones:', studentPhones);
-    const students = await Student.find({ phone: { $in: studentPhones } });
-    console.log('✅ Found students:', students.length);
+    console.log('🔍 Phone number types:', studentPhones.map(p => typeof p));
+    console.log('🔍 Phone number lengths:', studentPhones.map(p => p?.length));
+    
+    // Get students from teacher's sections instead of Student database
+    const allTeacherStudents = [];
+    teacher.sections.forEach(section => {
+      if (section.students) {
+        section.students.forEach(student => {
+          allTeacherStudents.push({
+            name: student.name,
+            phone: student.phone,
+            studentId: student.studentId || student._id
+          });
+        });
+      }
+    });
+    
+    console.log('🔍 Available students in teacher sections:', allTeacherStudents.map(s => ({ name: s.name, phone: s.phone })));
+    
+    // Find matching students from teacher's data
+    console.log('🔍 Filtering students by phone numbers...');
+    console.log('🔍 Looking for phones:', studentPhones);
+    console.log('🔍 Available students:', allTeacherStudents.map(s => ({ name: s.name, phone: s.phone })));
+    
+    const students = allTeacherStudents.filter(student => {
+      const isMatch = studentPhones.includes(student.phone);
+      console.log(`🔍 Checking ${student.name} (${student.phone}) - Match: ${isMatch}`);
+      return isMatch;
+    });
+    
+    console.log('✅ Found students from teacher sections:', students.length);
+    console.log('✅ Matched students:', students.map(s => ({ name: s.name, phone: s.phone })));
     
     if (students.length === 0) {
-      console.log('❌ No students found with provided phone numbers');
+      console.log('❌ No students found with provided phone numbers in teacher sections');
+      console.log('❌ Searched for:', studentPhones);
+      console.log('❌ Available in teacher sections:', allTeacherStudents.map(s => ({ name: s.name, phone: s.phone })));
+      
       return res.status(404).json({ success: false, error: 'No students found with provided phone numbers' });
     }
     
@@ -1044,14 +1019,96 @@ app.post('/assign-test', auth, async (req, res) => {
     
     console.log('📚 Test assignment object:', testAssignment);
     
-    // Add test assignment to each student
-    const updatePromises = students.map(async (student) => {
-      console.log(`📝 Adding test to student: ${student.name} (${student.phone})`);
-      student.assignedTests.push(testAssignment);
-      return student.save();
+    // Add test assignment to each student in teacher's sections
+    console.log('📝 Adding test assignments to teacher sections...');
+    
+    // Update teacher's sections with test assignments
+    teacher.sections.forEach(section => {
+      if (section.students) {
+        section.students.forEach(student => {
+          if (studentPhones.includes(student.phone)) {
+            if (!student.assignedTests) {
+              student.assignedTests = [];
+            }
+            student.assignedTests.push(testAssignment);
+            console.log(`📝 Added test to student: ${student.name} (${student.phone})`);
+          }
+        });
+      }
     });
     
-    await Promise.all(updatePromises);
+    // Verify students exist in Student database before assigning tests
+    console.log('📝 Verifying students exist in Student database...');
+    console.log('📝 Processing students from teacher sections:', students.map(s => ({ name: s.name, phone: s.phone })));
+    
+    // Show all students available in Student DB
+    console.log('📝 Checking all students in Student database...');
+    const allStudentsInDB = await StudentModel.find({}, 'name phone email').limit(20);
+    console.log('📝 Available students in Student DB:', allStudentsInDB.map(s => ({ 
+      name: s.name, 
+      phone: s.phone, 
+      email: s.email 
+    })));
+    
+    const validStudents = [];
+    const invalidStudents = [];
+    
+    for (const student of students) {
+      try {
+        // Check if student exists in Student database
+        const studentRecord = await StudentModel.find({ phone: student.phone });
+        
+        if (studentRecord.length > 0) {
+          // Student exists in Student DB
+          validStudents.push(student);
+          console.log(`✅ Student found in Student DB: ${student.name} (${student.phone})`);
+        } else {
+          // Student doesn't exist in Student DB
+          invalidStudents.push(student);
+          console.log(`❌ Student NOT found in Student DB: ${student.name} (${student.phone})`);
+        }
+      } catch (err) {
+        console.error(`❌ Error checking student ${student.name}:`, err);
+        invalidStudents.push(student);
+      }
+    }
+    
+    // If any students don't exist in Student DB, return error
+    if (invalidStudents.length > 0) {
+      const invalidNames = invalidStudents.map(s => s.name).join(', ');
+      const invalidPhones = invalidStudents.map(s => s.phone).join(', ');
+      console.log(`❌ Cannot assign tests - students not registered: ${invalidNames}`);
+      
+      return res.status(404).json({ 
+        success: false, 
+        error: `Students not found in database: ${invalidNames} (${invalidPhones}). Please ensure students are registered first.` 
+      });
+    }
+    
+    // Only proceed if all students exist in Student DB
+    console.log('📝 All students verified in Student database, proceeding with test assignment...');
+    
+    const studentUpdatePromises = validStudents.map(async (student) => {
+      try {
+        // Find the student in the Student database by phone number
+        const studentRecord = await StudentModel.find({ phone: student.phone });
+        const studentDoc = studentRecord[0];
+        
+        if (!studentDoc.assignedTests) {
+          studentDoc.assignedTests = [];
+        }
+        studentDoc.assignedTests.push(testAssignment);
+        await studentDoc.save();
+        console.log(`📝 Added test to Student DB: ${student.name} (${student.phone})`);
+      } catch (err) {
+        console.error(`❌ Error updating student ${student.name}:`, err);
+      }
+    });
+    
+    await Promise.all(studentUpdatePromises);
+    
+    // Save the teacher document
+    await teacher.save();
     console.log('✅ Test assigned to all students successfully');
     
     console.log('=== ASSIGN TEST REQUEST SUCCESS ===');
