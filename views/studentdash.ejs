@@ -143,51 +143,79 @@
     }
 
     .tabs-container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow: hidden;
-    width: 100vw; /* full viewport width */
-    margin: 0 auto;
-    padding: 20px; /* optional padding */
-}
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      width: 100%; /* Adjusted for better containment */
+      margin: 0 auto;
+      padding: 20px;
+    }
 
     .tabs-header {
-    margin-top: 24px;
-    display: flex;
-    background-color: black;
-    border-bottom: 1px solid #e0e0e0;
-    border-radius: 20px;
-    width: 20%;
-    justify-content: center;
-}
-.tabs-content{
-    
-    padding: 40px;
-}
- .tab-button {    padding: 20px 40px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 20px;
-      color: #666;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      border-radius: 20px;
+        margin-top: 24px;
+        display: flex;
+        border-bottom: 1px solid #e0e0e0;
+        width: 100%; /* Full width */
+        justify-content: flex-start;
+        padding-bottom: 5px;
+        background-color: transparent;
+    }
+
+    .tabs-header-content { /* NEW: Flex container to manage alignment */
+        display: flex;
+        justify-content: space-between; /* Pushes tab buttons left and new button right */
+        align-items: center;
+        width: 100%;
+        padding: 0 20px 0 0; 
+    }
+
+    .tabs-content{
+        padding: 40px;
+    }
+
+    .tab-button {
+        padding: 10px 20px; /* Adjusted padding */
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px; /* Adjusted font size */
+        color: #666;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border-radius: 0;
+        border-bottom: 3px solid transparent; /* Placeholder for active state */
+        margin-right: 15px;
     }
 
     .tab-button.active {
-    
-      color: white;
+        color: #000;
+        border-bottom: 3px solid #000; /* Active underline */
+        background-color: transparent;
     }
 
     .tab-button:hover:not(.active) {
-      background-color: #f0f0f0;
+        background-color: #f0f0f0;
+        border-bottom: 3px solid transparent;
     }
 
-    .tabs-content {
-      padding: 40px;
+    .ask-doubt-tab-btn { /* NEW: Style for the Ask Doubt button */
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: background-color 0.3s;
+        margin-left: auto; /* Pushes button to the far right */
     }
+
+    .ask-doubt-tab-btn:hover {
+        background-color: #0056b3;
+    }
+
 
     .tab-title {
       font-size: 30px;
@@ -203,34 +231,34 @@
     }
 
     .materials-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* responsive width */
-    gap: 20px;
-}
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* responsive width */
+      gap: 20px;
+    }
 
-.materials-scroll {
-    display: flex;
-    gap: 20px;
-    overflow-x: auto;
-    padding-bottom: 10px;
-    scroll-behavior: smooth;
-}
-.materials-scroll::-webkit-scrollbar {
-    height: 8px;
-}
-.materials-scroll::-webkit-scrollbar-thumb {
-    background-color: #ccc;
-    border-radius: 4px;
-}
-   .material-card {
-    min-width: 300px; /* each card width */
-    flex: 0 0 auto;   /* prevent shrinking */
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 20px;
-    background: white;
-    height: 250px;
-}
+    .materials-scroll {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scroll-behavior: smooth;
+    }
+    .materials-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+    .materials-scroll::-webkit-scrollbar-thumb {
+      background-color: #ccc;
+      border-radius: 4px;
+    }
+    .material-card {
+      min-width: 300px; /* each card width */
+      flex: 0 0 auto;   /* prevent shrinking */
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      background: white;
+      height: 250px;
+    }
 
     .material-header {
       display: flex;
@@ -344,59 +372,61 @@
           <div class="stat-icon">
             <i class="fas fa-user-check"></i>
           </div>
-        </div>
-        <div class="stat-number"><%= (student && student.assignedTests) ? student.assignedTests.length : 0 %></div>
-        <div class="stat-subtitle">
-          <% if (student && student.assignedTests && student.assignedTests.length > 0) { %>
-            <% const upcomingTests = student.assignedTests.filter(test => new Date(test.dueDate.split('-').reverse().join('-')) > new Date()).length; %>
-            <%= upcomingTests %> upcoming
-          <% } else { %>
-            no tests assigned
-          <% } %>
+          </div>
+          <div class="stat-number"><%= (student && student.assignedTests) ? student.assignedTests.length : 0 %></div>
+          <div class="stat-subtitle">
+            <% if (student && student.assignedTests && student.assignedTests.length > 0) { %>
+              <% const upcomingTests = student.assignedTests.filter(test => new Date(test.dueDate.split('-').reverse().join('-')) > new Date()).length; %>
+              <%= upcomingTests %> upcoming
+            <% } else { %>
+              no tests assigned
+            <% } %>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="tabs-container">
-      <div class="tabs-header">
-        <button class="tab-button active" onclick="switchTab(0)">Tests</button>
-      </div>
+      <div class="tabs-container">
+        <div class="tabs-header">
+          <div class="tabs-header-content">             <button class="tab-button active" onclick="switchTab(0)">Tests</button>
+            <a href="/ask-doubt-form"><button class="ask-doubt-tab-btn" >Ask Doubt</button>       </a>    </div>
+        </div>
 
-      <div class="tabs-content">
-        <div class="tab-pane active">
-    <div class="tab-title">Assigned Tests</div>
-    <div class="tab-subtitle">Your test assignments</div>
-    <% if (student && student.assignedTests && student.assignedTests.length > 0) { %>
-        <div class="materials-scroll">
-            <% student.assignedTests.forEach(test => { %>
-                <div class="material-card">
+        <div class="tabs-content">
+          <div class="tab-pane active">
+            <div class="tab-title">Assigned Tests</div>
+            <div class="tab-subtitle">Your test assignments</div>
+            <% if (student && student.assignedTests && student.assignedTests.length > 0) { %>
+              <div class="materials-scroll">
+                <% student.assignedTests.forEach(test => { %>
+                  <div class="material-card">
                     <div class="material-header">
-                        <div class="material-title"><%= test.testName %></div>
-                        <button class="ask-doubt-btn">View Test</button>
+                      <div class="material-title"><%= test.testName %></div>
+                      <button class="ask-doubt-btn">View Test</button>
                     </div>
                     <div class="material-code">Due: <%= test.dueDate || 'Not specified' %></div>
                     <div class="material-tag"><%= test.courseName %></div>
                     <div class="material-file">
-                        <a href="<%= test.fileUrl %>" target="_blank" style="color: #333; text-decoration: none;">
-                            <%= test.fileName %>
-                        </a>
+                      <a href="<%= test.fileUrl %>" target="_blank" style="color: #333; text-decoration: none;">
+                        <%= test.fileName %>
+                      </a>
                     </div>
                     <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                        Assigned by: <%= test.teacherName %>
+                      Assigned by: <%= test.teacherName %>
                     </div>
+                  </div>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="empty-state">
+                <div class="empty-state-icon">
+                  <i class="fas fa-file-alt"></i>
                 </div>
-            <% }) %>
+                <p>No tests assigned yet</p>
+              </div>
+            <% } %>
+          </div>
         </div>
-    <% } else { %>
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <p>No tests assigned yet</p>
-        </div>
-    <% } %>
-</div>
-    </div>
+      </div>
   </div>
 
   <script>
@@ -405,6 +435,11 @@
       const buttons = document.querySelectorAll('.tab-button');
       panes.forEach((p, i) => p.classList.toggle('active', i === index));
       buttons.forEach((b, i) => b.classList.toggle('active', i === index));
+    }
+
+    function askDoubt() {
+      alert("Ask Doubt feature is launched!");
+      // Replace the alert with code to open a modal, navigate to a form, or start a chat.
     }
   </script>
 </body>
