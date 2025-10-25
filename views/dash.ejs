@@ -22,7 +22,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background-color: #FBF9F7;
             overflow-x: hidden;
-            overflow: hidden;
+           
             font-family: "Geist", sans-serif;;
         }
 
@@ -346,10 +346,10 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto">
-                    <li class="nav-item"><a class="nav-link" href="#">home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/dash">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/class">Classes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/test">Test</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/browse">Learn</a></li>
                 </ul>
                 <div class="profile-section">
     <span><%= teacher ? teacher.username : 'Guest' %></span>
@@ -568,17 +568,7 @@
                     </button>
                 </div>
                 
-                <div class="section-card light-blue">
-                    <h2 class="section-title-tests mb-3">Doubts</h2>
-                    <button class="action-btn" onclick="window.location.href='/doubts'">
-                        <i class="bi bi-question-circle"></i>
-                        <span>Manage Doubts</span>
-                    </button>
-                    <button class="action-btn" onclick="window.location.href='/ask-doubt-form'" style="margin-top: 8px;">
-                        <i class="bi bi-plus-circle"></i>
-                        <span>Test Ask Doubt Form</span>
-                    </button>
-                </div>
+              
             </div>
         </div>
     </div>
