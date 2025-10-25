@@ -500,7 +500,9 @@ app.get('/login', auth, (req, res) => {
     if (res.locals.teacher) return res.redirect('/dash');
     res.render('login', { error: null });
 });
-
+app.get('/analytics',(req,res)=>{     
+  res.render('analytics');
+})
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
