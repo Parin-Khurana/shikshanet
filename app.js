@@ -29,6 +29,7 @@ const app = express();
 const client = twilio(accountSid, authToken);
 
 // --- Setup ---
+app.use('/imgs', express.static(path.join(__dirname, 'imgs')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(cookieParser());
