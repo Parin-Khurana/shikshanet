@@ -127,6 +127,9 @@ app.get('/logout_student', (req, res) => {
 });
 // --- ROUTES ---
 app.get('/studentdash', studentAuth, async (req, res) => {
+  console.log('=== STUDENT DASHBOARD ROUTE HIT ===');
+  console.log('Student auth check:', !!res.locals.student);
+  
   if (!res.locals.student) return res.redirect('/login_student');
   try {
     if (!StudentModel) {
@@ -153,6 +156,26 @@ app.get('/studentdash', studentAuth, async (req, res) => {
         assignedTests: []
       };
       return res.render('studentdash', { student: fallbackStudent });
+    }
+    
+    console.log('✅ Student found in database:', student.name);
+    console.log('📊 Student data:', {
+      name: student.name,
+      phone: student.phone,
+      email: student.email,
+      assignedTestsCount: student.assignedTests ? student.assignedTests.length : 0
+    });
+    
+    // Debug: Log assigned tests data
+    console.log('📝 Student assigned tests count:', student.assignedTests ? student.assignedTests.length : 0);
+    if (student.assignedTests && student.assignedTests.length > 0) {
+      console.log('📝 Assigned tests details:', student.assignedTests.map(test => ({
+        testName: test.testName,
+        courseName: test.courseName,
+        dueDate: test.dueDate,
+        fileUrl: test.fileUrl,
+        teacherName: test.teacherName
+      })));
     }
     
     res.render('studentdash', { student: student });
