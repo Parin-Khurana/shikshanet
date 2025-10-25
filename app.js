@@ -93,7 +93,9 @@ app.get('/register_student', (req, res) => {
   // Don't redirect if already logged in - allow registration of new accounts
   res.render('register_student');
 });
-
+app.get('/info', (req, res) =>  {
+  res.render('info');
+});
 app.get('/login_student', studentAuth, (req, res) => {
   if (res.locals.student) return res.redirect('/studentdash');
   res.render('login_student', { error: null });
