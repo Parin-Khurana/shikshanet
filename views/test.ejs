@@ -778,13 +778,18 @@ body {
         <!-- Class/Section Dropdown -->
         <div class="form-group">
           <label class="label" for="section-select">Class / Section</label>
-          <select class="select" id="section-select">
-            <option value="">Select a section</option>
-            <% teacher.sections.forEach(section => { %>
-              <% const sectionName = section.sectionName || section.name || 'Unnamed'; %>
-              <option value="<%= sectionName %>"><%= sectionName %></option>
-            <% }) %>
-          </select>
+          <select id="section-select" name="sectionId" class="select">
+  <% if (teacher && teacher.sections && teacher.sections.length) { %>
+    <% teacher.sections.forEach((section, index) => { %>
+      <% 
+        const sectionName = section.name || section.sectionName || 'Unnamed';
+      %>
+      <option value="<%= index %>" style="color: black;"><%= sectionName %></option>
+    <% }) %>
+  <% } else { %>
+    <option disabled>No sections available</option>
+  <% } %>
+</select>
         </div>
       </div>
 
@@ -794,8 +799,25 @@ body {
           <label class="label" for="course-name">Course Name</label>
           <select class="select" id="course-name" name="course-name">
             <option value="">Select a course</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Science">Science</option>
+            <% 
+              // Collect all courses from all sections
+              let allCourses = [];
+              if (teacher && teacher.sections && teacher.sections.length) {
+                teacher.sections.forEach(section => {
+                  if (section.courses && section.courses.length > 0) {
+                    section.courses.forEach(course => {
+                      allCourses.push({
+                        courseName: course.courseName,
+                        sectionName: section.sectionName
+                      });
+                    });
+                  }
+                });
+              }
+            %>
+            <% allCourses.forEach(course => { %>
+              <option value="<%= course.courseName %>"><%= course.courseName %> - <%= course.sectionName %></option>
+            <% }) %>
           </select>
         </div>
 
@@ -842,37 +864,82 @@ body {
 <script>
 
 
-  document.addEventListener('DOMContentLoaded', () => {
-  // Sections data from backend
-  const sections = <%- JSON.stringify(teacher.sections) %>;
-
-  const sectionSelect = document.getElementById('section-select');
-  const studentsList = document.getElementById('students-list');
-  const selectAllCheckbox = document.getElementById('select-all');
-  const assignButtonContainer = document.getElementById('assign-button-container');
-  const assignButton = document.getElementById('assign-button');
-  const testFileInput = document.getElementById('pdfFile');
-  const messageDiv = document.getElementById('message');
-
+  // Global variables
+  let sections, sectionSelect, studentsList, selectAllCheckbox, assignButtonContainer, assignButton, testFileInput, messageDiv;
+  
   // Global variable to store uploaded file URL
   window.uploadedFileUrl = null;
 
   // Global function to update assign button state
   window.updateAssignButtonState = function() {
+    if (!sectionSelect || !studentsList || !assignButtonContainer || !assignButton) {
+      console.log('Elements not ready yet');
+      return;
+    }
+    
     const hasSection = sectionSelect.value !== "";
     const hasSelectedStudents = studentsList.querySelectorAll('.student-checkbox:checked').length > 0;
+    // File upload is now optional - can assign tests without files
     const hasUploadedFile = window.uploadedFileUrl !== null;
 
-    if (hasSection && (hasSelectedStudents || hasUploadedFile)) {
+    console.log('Assign button state check:', {
+      hasSection,
+      hasSelectedStudents,
+      hasUploadedFile,
+      sectionValue: sectionSelect.value,
+      uploadedFileUrl: window.uploadedFileUrl
+    });
+
+    // Only require section and at least one student - file is optional
+    if (hasSection && hasSelectedStudents) {
+      console.log('Enabling assign button');
       assignButtonContainer.classList.add('visible');
       assignButton.disabled = false;
     } else {
+      console.log('Disabling assign button');
       assignButtonContainer.classList.remove('visible');
       assignButton.disabled = true;
     }
   };
 
+  document.addEventListener('DOMContentLoaded', () => {
+  // Sections data from backend
+  sections = <%- JSON.stringify(teacher.sections) %>;
+
+  sectionSelect = document.getElementById('section-select');
+  studentsList = document.getElementById('students-list');
+  selectAllCheckbox = document.getElementById('select-all');
+  assignButtonContainer = document.getElementById('assign-button-container');
+  assignButton = document.getElementById('assign-button');
+  testFileInput = document.getElementById('pdfFile');
+  messageDiv = document.getElementById('message');
+
+  // Debug: Log sections data
+  console.log('Sections data:', sections);
+
+  // Initial render - show first section if available
+  if (sections && sections.length) {
+    const firstSectionIndex = 0;
+    console.log('First section index:', firstSectionIndex);
+    console.log('Setting sectionSelect.value to:', firstSectionIndex);
+    sectionSelect.value = firstSectionIndex;
+    const firstSection = sections[firstSectionIndex];
+    console.log('First section found:', firstSection);
+    console.log('First section students:', firstSection?.students);
+    if (firstSection && firstSection.students && firstSection.students.length > 0) {
+      console.log('Students in first section:', firstSection.students);
+      renderStudents(firstSection.students);
+    } else {
+      console.log('No students found in first section');
+      studentsList.innerHTML = "<p style='text-align: center; color: #666; padding: 20px;'>No students found in this section</p>";
+    }
+  } else {
+    console.log('No sections available');
+    studentsList.innerHTML = "<p style='text-align: center; color: #666; padding: 20px;'>No sections available</p>";
+  }
+
   function renderStudents(students) {
+    console.log('Rendering students:', students);
     studentsList.innerHTML = ""; // Clear previous students
 
     students.forEach((student, index) => {
@@ -915,12 +982,18 @@ body {
 
   // Section dropdown change
   sectionSelect.addEventListener('change', (e) => {
-    const selectedSection = e.target.value;
-    const section = sections.find(sec => (sec.sectionName || sec.name) === selectedSection);
-    if (section) {
+    const selectedSectionIndex = parseInt(e.target.value);
+    console.log('Section changed to index:', selectedSectionIndex);
+    console.log('Section select value:', e.target.value);
+    const section = sections[selectedSectionIndex];
+    console.log('Section found:', section);
+    console.log('Section students:', section?.students);
+    if (section && section.students && section.students.length > 0) {
+      console.log('Students in selected section:', section.students);
       renderStudents(section.students);
     } else {
-      studentsList.innerHTML = "";
+      console.log('No students found in selected section');
+      studentsList.innerHTML = "<p style='text-align: center; color: #666; padding: 20px;'>No students found in this section</p>";
       selectAllCheckbox.checked = false;
     }
     window.updateAssignButtonState();
@@ -938,8 +1011,8 @@ body {
 
   // Assign button click handler
   assignButton.addEventListener('click', async () => {
-    const selectedSection = sectionSelect.value;
-    const section = sections.find(sec => (sec.sectionName || sec.name) === selectedSection);
+    const selectedSectionIndex = parseInt(sectionSelect.value);
+    const section = sections[selectedSectionIndex];
     
     if (!section) {
       alert("Please select a section first!");
@@ -959,82 +1032,73 @@ body {
       return;
     }
 
+    // File upload is now optional - can assign tests without files
     if (!window.uploadedFileUrl) {
-      alert("Please upload a test file first!");
-      return;
+      console.log('No file uploaded - assigning test without file');
     }
 
-    // Get form data
-    const testName = document.getElementById('test-name').value.trim();
-    const courseName = document.getElementById('course-name').value;
-    const dueDate = document.getElementById('due-date').value.trim();
-    const fileName = document.getElementById('pdfFile').files[0]?.name || 'test.pdf';
-
-    // Detailed validation with specific error messages
-    if (!testName) {
-      alert("Please enter a test name!");
-      document.getElementById('test-name').focus();
-      return;
-    }
+    // Get form data (all optional with sensible defaults)
+    const testName = document.getElementById('title').value || 'Test Assignment';
+    const courseName = document.getElementById('course-name').value || 'General';
+    const dueDate = document.getElementById('due-date').value || 'Not specified';
     
-    if (!courseName) {
-      alert("Please select a course!");
-      document.getElementById('course-name').focus();
-      return;
-    }
-    
-    // Due date is now optional - use a default if not provided
-    const finalDueDate = dueDate || 'No due date';
+    console.log('Form data:', { testName, courseName, dueDate });
 
-    // Assign tests and send SMS
     try {
       assignButton.disabled = true;
       assignButton.textContent = "Assigning...";
 
-      const assignmentResults = [];
-      const successfulAssignments = [];
-      const failedAssignments = [];
+      console.log('Starting test assignment process...');
+      console.log('Selected students:', selectedStudents);
+      console.log('Student phones:', selectedStudents.map(s => s.phone));
+      
+      // Step 1: Save test assignment to database
+      console.log('Step 1: Saving test assignment to database...');
+      
+      const requestBody = {
+        testName: testName,
+        courseName: courseName,
+        dueDate: dueDate,
+        fileUrl: window.uploadedFileUrl,
+        fileName: 'Test File', // You might want to get this from the uploaded file
+        studentPhones: selectedStudents.map(s => s.phone),
+        sectionIndex: selectedSectionIndex
+      };
+      
+      console.log('Request body being sent:', requestBody);
+      
+      const assignResponse = await fetch('/assign-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
 
-      // Process each selected student
-      for (const student of selectedStudents) {
-        try {
-          // First, assign the test to the student
-          const assignResponse = await fetch('/assign-test', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              testName,
-              courseName,
-              dueDate: finalDueDate,
-              fileUrl: window.uploadedFileUrl,
-              fileName,
-              studentPhone: student.phone
-            })
-          });
+      const assignResult = await assignResponse.json();
+      console.log('Assignment result:', assignResult);
 
-          const assignResult = await assignResponse.json();
-          
-          if (assignResult.success) {
-            successfulAssignments.push(student);
-            console.log(`Test assigned to ${student.name}`);
-          } else {
-            failedAssignments.push({ student, error: assignResult.error });
-            console.error(`Failed to assign test to ${student.name}:`, assignResult.error);
-          }
-        } catch (err) {
-          failedAssignments.push({ student, error: err.message });
-          console.error(`Error assigning test to ${student.name}:`, err);
-        }
+      if (!assignResult.success) {
+        throw new Error(assignResult.error || 'Failed to assign test');
       }
 
-      // Send SMS to successfully assigned students
-      if (successfulAssignments.length > 0) {
-        const recipients = successfulAssignments.map(student => student.phone);
-        const message = `Hi! A new test "${testName}" has been assigned to you. View it here: ${window.uploadedFileUrl}`;
+      console.log('✅ Test assigned successfully to database');
+      assignButton.textContent = "Sending SMS...";
 
-        console.log('Sending SMS to:', recipients);
-        console.log('Message:', message);
+      // Step 2: Send SMS notification (this can fail without affecting the assignment)
+      console.log('Step 2: Sending SMS notifications...');
+      const recipients = selectedStudents.map(student => student.phone);
+      
+      // Create appropriate message based on whether file was uploaded
+      let message;
+      if (window.uploadedFileUrl) {
+        message = `Hi! A new test "${testName}" has been assigned to you. View it here: ${window.uploadedFileUrl}`;
+      } else {
+        message = `Hi! A new test "${testName}" has been assigned to you. Check your dashboard for details.`;
+      }
 
+      console.log('Sending SMS to:', recipients);
+      console.log('Message:', message);
+
+      try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
@@ -1049,24 +1113,25 @@ body {
         const smsResult = await smsResponse.json();
         
         console.log('SMS Response:', smsResult);
+        
+        if (smsResult.success) {
+          alert(`✅ Test assigned successfully! SMS sent to ${selectedStudents.length} student(s).`);
+        } else {
+          console.warn('SMS failed but test was assigned:', smsResult);
+          alert(`✅ Test assigned successfully! SMS notification failed, but students can see the test on their dashboard.`);
+        }
+      } catch (smsError) {
+        console.warn('SMS failed but test was assigned:', smsError);
+        if (smsError.name === 'AbortError') {
+          alert(`✅ Test assigned successfully! SMS timed out, but students can see the test on their dashboard.`);
+        } else {
+          alert(`✅ Test assigned successfully! SMS failed (${smsError.message}), but students can see the test on their dashboard.`);
+        }
       }
-
-      // Show results
-      let resultMessage = `Test assignment completed!\n\n`;
-      resultMessage += `✅ Successfully assigned to ${successfulAssignments.length} student(s)\n`;
-      
-      if (failedAssignments.length > 0) {
-        resultMessage += `❌ Failed to assign to ${failedAssignments.length} student(s):\n`;
-        failedAssignments.forEach(failure => {
-          resultMessage += `- ${failure.student.name}: ${failure.error}\n`;
-        });
-      }
-
-      alert(resultMessage);
 
     } catch (error) {
-      console.error('Error in assignment process:', error);
-      alert(`Error during assignment: ${error.message}`);
+      console.error('Error assigning test:', error);
+      alert(`❌ Failed to assign test: ${error.message}`);
     } finally {
       assignButton.disabled = false;
       assignButton.textContent = "Assign Test";
@@ -1192,15 +1257,18 @@ Format each question clearly numbered.
 
   // Upload PDF button handler
   document.getElementById('upload-pdf-btn').addEventListener('click', async () => {
+    console.log('PDF upload button clicked');
     const fileInput = document.getElementById('pdfFile');
     const messageDiv = document.getElementById('message');
     
     if (!fileInput.files[0]) {
+      console.log('No file selected');
       alert('Please select a PDF file first!');
       return;
     }
 
     const file = fileInput.files[0];
+    console.log('File selected:', file.name, file.type, file.size);
     
     try {
       messageDiv.innerHTML = '<div class="message">Uploading...</div>';
@@ -1208,21 +1276,27 @@ Format each question clearly numbered.
       const formData = new FormData();
       formData.append('file', file);
       
+      console.log('Sending upload request to /upload');
       const response = await fetch('/upload', { 
         method: 'POST', 
         body: formData 
       });
       
+      console.log('Upload response status:', response.status);
       const result = await response.json();
+      console.log('Upload result:', result);
       
       if (result.success) {
         window.uploadedFileUrl = result.fileUrl; // Store the uploaded file URL
+        console.log('File uploaded successfully, URL:', result.fileUrl);
         messageDiv.innerHTML = `<div class="message success">✅ Uploaded! <a href="${result.fileUrl}" target="_blank">View PDF</a></div>`;
         window.updateAssignButtonState(); // Update assign button state
       } else {
+        console.log('Upload failed:', result.error);
         messageDiv.innerHTML = `<div class="message error">❌ Upload failed: ${result.error || 'Unknown error'}</div>`;
       }
     } catch (err) {
+      console.error('Upload error:', err);
       messageDiv.innerHTML = `<div class="message error">❌ Upload failed: ${err.message}</div>`;
     }
   });

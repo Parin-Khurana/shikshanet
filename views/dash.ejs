@@ -395,8 +395,22 @@
             <div class="stat-card orange">
                 <div class="stat-icon orange"><i class="bi bi-book"></i></div>
                 <div class="stat-label">Total Courses</div>
-                <div class="stat-value">2</div>
-                <div class="stat-subtext">1 completed</div>
+                <div class="stat-value">
+                    <% 
+                        let totalCourses = 0;
+                        let completedCourses = 0;
+                        if (teacher && teacher.sections) {
+                            teacher.sections.forEach(section => {
+                                if (section.courses) {
+                                    totalCourses += section.courses.length;
+                                    completedCourses += section.courses.filter(course => course.status === 'completed').length;
+                                }
+                            });
+                        }
+                    %>
+                    <%= totalCourses %>
+                </div>
+                <div class="stat-subtext"><%= completedCourses %> completed</div>
             </div>
         </div>
 
@@ -415,7 +429,19 @@
             <div class="stat-card purple">
                 <div class="stat-icon purple"><i class="bi bi-people"></i></div>
                 <div class="stat-label">Active Students</div>
-                <div class="stat-value">21</div>
+                <div class="stat-value">
+                    <% 
+                        let totalStudents = 0;
+                        if (teacher && teacher.sections) {
+                            teacher.sections.forEach(section => {
+                                if (section.students) {
+                                    totalStudents += section.students.length;
+                                }
+                            });
+                        }
+                    %>
+                    <%= totalStudents %>
+                </div>
             </div>
         </div>
     </div>
@@ -437,37 +463,73 @@
                         <div class="add-btn" onclick="addCourse()">+</div>
                     </div>
 
-                    <div class="course-item">
-                        <div class="course-header">
-                            <div>
-                                <h3 class="course-title">Graphs - Grade 7</h3>
-                                <p class="course-subtitle">Introduction to Graphs.</p>
+                    <% 
+                        // Collect all courses from all sections
+                        let allCourses = [];
+                        if (teacher && teacher.sections && teacher.sections.length) {
+                            teacher.sections.forEach(section => {
+                                if (section.courses && section.courses.length > 0) {
+                                    section.courses.forEach(course => {
+                                        allCourses.push({
+                                            course: course,
+                                            section: section
+                                        });
+                                    });
+                                }
+                            });
+                        }
+                        
+                        // Show only first 3 courses
+                        const coursesToShow = allCourses.slice(0, 3);
+                    %>
+                    
+                    <% if (coursesToShow.length > 0) { %>
+                        <% coursesToShow.forEach(({course, section}) => { %>
+                            <div class="course-item">
+                                <div class="course-header">
+                                    <div>
+                                        <h3 class="course-title"><%= course.courseName %> - <%= section.sectionName %></h3>
+                                        <p class="course-subtitle"><%= course.description %></p>
+                                    </div>
+                                    <button class="manage-btn" onclick="window.location.href='/courses'">Manage</button>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-label">
+                                        <%= course.status === 'active' ? 'Active' : 'Completed' %>
+                                        <% if (section.students) { %>
+                                            - <%= section.students.length %> students
+                                        <% } %>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" 
+                                             <% if (course.status === 'completed') { %>
+                                                 style="width: 100%"
+                                             <% } else { %>
+                                                 style="width: 70%"
+                                             <% } %>></div>
+                                    </div>
+                                </div>
                             </div>
-                            <button class="manage-btn">Manage</button>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-label">70% complete</div>
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: 70%"></div>
+                        <% }) %>
+                        
+                        <% if (allCourses.length > 3) { %>
+                            <div class="course-item" style="text-align: center; padding: 20px;">
+                                <p style="color: #666; margin: 0;">
+                                    And <%= allCourses.length - 3 %> more courses... 
+                                    <a href="/courses" style="color: #007bff; text-decoration: none;">View All</a>
+                                </p>
+                            </div>
+                        <% } %>
+                    <% } else { %>
+                        <div class="course-item">
+                            <div class="course-header">
+                                <div>
+                                    <h3 class="course-title">No courses yet</h3>
+                                    <p class="course-subtitle">Click the + button to add your first course</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="course-item">
-                        <div class="course-header">
-                            <div>
-                                <h3 class="course-title">Graphs - Grade 7</h3>
-                                <p class="course-subtitle">Introduction to Graphs.</p>
-                            </div>
-                            <button class="manage-btn">Manage</button>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-label">70% complete</div>
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: 70%"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <% } %>
                 </div>
             </div>
 
@@ -481,8 +543,8 @@
                         <a href="/class" style="text-decoration: none;color: black;"><span >Create/Upload Lesson</span></a> 
                     </button>
                     <button class="action-btn">
-                        <i class="bi bi-bar-chart"></i>
-                        <span>View Analytics</span>
+                        <i class="bi bi-book"></i>
+                        <a href="/courses" style="text-decoration: none;color: black;"><span >Manage Courses</span></a> 
                     </button>
                     <button class="action-btn">
                         <i class="bi bi-people"></i>
@@ -508,7 +570,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function addCourse() {
-            alert('Add new course functionality would go here!');
+            window.location.href = '/courses';
         }
     </script>
 </body>

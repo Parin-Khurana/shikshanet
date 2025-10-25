@@ -74,43 +74,47 @@
       </div>
 
       <!-- Add Course Form -->
-      <form id="add-course-form" method="POST" action="/add-course" class="mb-4">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="course-name">Course Name</label>
-            <input type="text" id="course-name" name="courseName" class="input" required>
+      <div class="card mb-4" style="padding: 24px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="margin-bottom: 20px; font-size: 20px; font-weight: 600;">Add New Course</h3>
+        <form id="add-course-form" class="mb-4">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group">
+              <label for="course-name">Course Name</label>
+              <input type="text" id="course-name" name="courseName" class="input" required>
+            </div>
+            <div class="form-group">
+              <label for="section-select">Select Section</label>
+              <select id="section-select" name="sectionId" class="select" required>
+                <% if (teacher && teacher.sections && teacher.sections.length) { %>
+                  <% teacher.sections.forEach((section, index) => { %>
+                    <% 
+                      const sectionName = section.name || section.sectionName || 'Unnamed';
+                    %>
+                    <option value="<%= index %>" style="color: black;"><%= sectionName %></option>
+                  <% }) %>
+                <% } else { %>
+                  <option disabled>No sections available</option>
+                <% } %>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            
-            <label for="section-select">Select Section</label>
-           <select id="section-select" name="sectionId" class="select" required>
-  <% if (teacher && teacher.sections && teacher.sections.length) { %>
-    <% teacher.sections.forEach(section => { %>
-      <% 
-        const sectionId = section._id || section.id || '';
-        const sectionName = section.name || section.sectionName || 'Unnamed';
-      %>
-      <option value="<%= sectionId %>" style="color: black;"><%= sectionName %></option>
-    <% }) %>
-  <% } else { %>
-    <option disabled>No sections available</option>
-  <% } %>
-</select>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group">
+              <label for="course-desc">Description</label>
+              <textarea id="course-desc" name="description" class="textarea" required style="min-height: 80px;"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="course-status">Status</label>
+              <select id="course-status" name="status" class="select" required>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="course-desc">Description</label>
-            <textarea id="course-desc" name="description" class="textarea" required></textarea>
-          </div>
-          <div class="form-group">
-            <label for="course-status">Status</label>
-            <select id="course-status" name="status" class="select" required>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary">Add Course</button>
-      </form>
+          <button type="submit" class="btn btn-primary">Add Course</button>
+        </form>
+        <div id="course-message" style="margin-top: 16px;"></div>
+      </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h2 class="section-title">Your Courses</h2>
@@ -130,11 +134,11 @@
             </tr>
           </thead>
           <tbody>
-            <% teacher.sections.forEach(section => { %>
+            <% teacher.sections.forEach((section, sectionIndex) => { %>
               <% if(section.courses) { %>
-                <% section.courses.forEach(course => { %>
+                <% section.courses.forEach((course, courseIndex) => { %>
                   <tr>
-                    <td><%= course.name %></td>
+                    <td><%= course.courseName %></td>
                     <td><%= section.sectionName %></td>
                     <td><%= course.description %></td>
                     <td><%= section.students ? section.students.length : 0 %></td>
@@ -144,11 +148,12 @@
                       </div>
                     </td>
                     <td>
-                      <form method="POST" action="/teacher/course/delete" style="display:inline">
-                        <input type="hidden" name="sectionId" value="<%= section._id %>">
-                        <input type="hidden" name="courseId" value="<%= course._id %>">
-                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                      </form>
+                      <button type="button" 
+                              class="btn btn-sm btn-danger" 
+                              onclick="deleteCourse('<%= sectionIndex %>', '<%= courseIndex %>', '<%= course.courseName %>')"
+                              style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 <% }) %>
@@ -159,6 +164,107 @@
       </div>
     </div>
   </main>
+
+  <script>
+    // Handle course form submission
+    document.getElementById('add-course-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      console.log('=== FRONTEND: FORM SUBMISSION START ===');
+      
+      const formData = new FormData(this);
+      const messageDiv = document.getElementById('course-message');
+      
+      // Debug: Log form data
+      console.log('📝 Form data being sent:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value}`);
+      }
+      
+      try {
+        messageDiv.innerHTML = '<div style="padding: 12px; background: #e3f2fd; color: #1976d2; border-radius: 4px; margin-top: 16px;">Adding course...</div>';
+        
+        console.log('🌐 Sending request to /add-course...');
+        const response = await fetch('/add-course', {
+          method: 'POST',
+          body: formData
+        });
+        
+        console.log('📡 Response received:', response.status, response.statusText);
+        
+        const result = await response.json();
+        console.log('📄 Response data:', result);
+        
+        if (result.success) {
+          console.log('✅ Course added successfully!');
+          messageDiv.innerHTML = `<div style="padding: 12px; background: #e8f5e8; color: #2e7d32; border-radius: 4px; margin-top: 16px;">✅ ${result.message}</div>`;
+          // Clear the form
+          this.reset();
+          // Reload the page to show the new course
+          setTimeout(() => {
+            console.log('🔄 Reloading page...');
+            window.location.reload();
+          }, 1500);
+        } else {
+          console.log('❌ Course addition failed:', result.error);
+          let errorMessage = result.error;
+          
+          // If it's a section not found error, add a refresh button
+          if (result.error && result.error.includes('outdated')) {
+            errorMessage += '<br><button onclick="window.location.reload()" style="margin-top: 8px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Page</button>';
+          }
+          
+          messageDiv.innerHTML = `<div style="padding: 12px; background: #ffebee; color: #c62828; border-radius: 4px; margin-top: 16px;">❌ ${errorMessage}</div>`;
+        }
+        console.log('=== FRONTEND: FORM SUBMISSION END ===');
+      } catch (error) {
+        console.error('❌ Frontend error:', error);
+        messageDiv.innerHTML = `<div style="padding: 12px; background: #ffebee; color: #c62828; border-radius: 4px; margin-top: 16px;">❌ Error: ${error.message}</div>`;
+      }
+    });
+
+    // Handle course deletion
+    function deleteCourse(sectionId, courseId, courseName) {
+      console.log('=== FRONTEND: DELETE COURSE START ===');
+      console.log('🗑️ Delete request:', { sectionId, courseId, courseName });
+      
+      if (confirm(`Are you sure you want to delete the course "${courseName}"?`)) {
+        const formData = new FormData();
+        formData.append('sectionId', sectionId);
+        formData.append('courseId', courseId);
+        
+        console.log('📝 Delete form data:');
+        for (let [key, value] of formData.entries()) {
+          console.log(`  ${key}: ${value}`);
+        }
+        
+        console.log('🌐 Sending delete request to /teacher/course/delete...');
+        fetch('/teacher/course/delete', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          console.log('📡 Delete response received:', response.status, response.statusText);
+          return response.json();
+        })
+        .then(result => {
+          console.log('📄 Delete response data:', result);
+          if (result.success) {
+            console.log('✅ Course deleted successfully!');
+            alert('Course deleted successfully!');
+            window.location.reload();
+          } else {
+            console.log('❌ Course deletion failed:', result.error);
+            alert('Error deleting course: ' + result.error);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Delete error:', error);
+          alert('Error deleting course: ' + error.message);
+        });
+      }
+      console.log('=== FRONTEND: DELETE COURSE END ===');
+    }
+  </script>
 
 </body>
 </html>

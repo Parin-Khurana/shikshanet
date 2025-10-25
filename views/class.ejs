@@ -472,7 +472,9 @@ select, .date-input {
                             <select id="class-select">
   <% if (teacher && teacher.sections && teacher.sections.length) { %>
     <% teacher.sections.forEach((section, index) => { %>
-      <% const sectionName = section.name || section.sectionName || 'Unnamed'; %>
+      <% 
+        const sectionName = section.name || section.sectionName || 'Unnamed';
+      %>
       <option value="<%= index %>"><%= sectionName %></option>
     <% }) %>
   <% } else { %>
@@ -484,10 +486,27 @@ select, .date-input {
                         <div class="form-group">
                             <label for="course-select">Course</label>
                             <select id="course-select">
-                                <option value="math">Math : Socialism in linear algebra</option>
-                                <option value="physics">Physics : Quantum Mechanics</option>
-                                <option value="chemistry">Chemistry : Organic Chemistry</option>
-                                <option value="biology">Biology : Cell Biology</option>
+                                <option value="">Select a course</option>
+                                <% 
+                                  // Collect all courses from all sections
+                                  let allCourses = [];
+                                  if (teacher && teacher.sections && teacher.sections.length) {
+                                    teacher.sections.forEach(section => {
+                                      if (section.courses && section.courses.length > 0) {
+                                        section.courses.forEach(course => {
+                                          allCourses.push({
+                                            courseName: course.courseName,
+                                            sectionName: section.sectionName,
+                                            description: course.description
+                                          });
+                                        });
+                                      }
+                                    });
+                                  }
+                                %>
+                                <% allCourses.forEach(course => { %>
+                                  <option value="<%= course.courseName %>"><%= course.courseName %> - <%= course.sectionName %> : <%= course.description %></option>
+                                <% }) %>
                             </select>
                         </div>
 
@@ -532,80 +551,11 @@ select, .date-input {
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <h2 class="card-title" style="margin-bottom: 0;">Students</h2>
-                        <span style="font-size: 16px; color: rgb(0, 0, 0); font-weight: 600px;">10/10/2010</span>
+                        <span id="attendance-date" style="font-size: 16px; color: rgb(0, 0, 0); font-weight: 600px;">Select a class to view students</span>
                     </div>
                     <div class="students-scroll">
-                        <!-- Student 1 -->
-                        <div class="attendance-card">
-                            <div class="student-info">
-                                <input type="checkbox" class="checkbox">
-                                <div class="student-details">
-                                    <h3>Abhiraj Goat</h3>
-                                    <p>+91 0000000000</p>
-                                </div>
-                            </div>
-                            <span class="attendance-status status-present">Present</span>
-                        </div>
-
-                        <!-- Student 2 -->
-                        <div class="attendance-card">
-                            <div class="student-info">
-                                <input type="checkbox" class="checkbox">
-                                <div class="student-details">
-                                    <h3>Abhiraj Goat</h3>
-                                    <p>+91 0000000000</p>
-                                </div>
-                            </div>
-                            <span class="attendance-status status-absent">Absent</span>
-                        </div>
-
-                        <!-- Student 3 -->
-                        <div class="attendance-card">
-                            <div class="student-info">
-                                <input type="checkbox" class="checkbox">
-                                <div class="student-details">
-                                    <h3>Abhiraj Goat</h3>
-                                    <p>+91 0000000000</p>
-                                </div>
-                            </div>
-                            <span class="attendance-status status-absent">Absent</span>
-                        </div>
-
-                        <!-- Student 4 -->
-                        <div class="attendance-card">
-                            <div class="student-info">
-                                <input type="checkbox" class="checkbox">
-                                <div class="student-details">
-                                    <h3>Abhiraj Goat</h3>
-                                    <p>+91 0000000000</p>
-                                </div>
-                            </div>
-                            <span class="attendance-status status-present">Present</span>
-                        </div>
-
-                        <!-- Student 5 (extra for scrolling) -->
-                        <div class="attendance-card">
-                            <div class="student-info">
-                                <input type="checkbox" class="checkbox">
-                                <div class="student-details">
-                                    <h3>Abhiraj Goat</h3>
-                                    <p>+91 0000000000</p>
-                                </div>
-                            </div>
-                            <span class="attendance-status status-present">Present</span>
-                        </div>
-
-                        <!-- Student 6 (extra for scrolling) -->
-                        <div class="attendance-card">
-                            <div class="student-info">
-                                <input type="checkbox" class="checkbox">
-                                <div class="student-details">
-                                    <h3>Abhiraj Goat</h3>
-                                    <p>+91 0000000000</p>
-                                </div>
-                            </div>
-                            <span class="attendance-status status-absent">Absent</span>
-                        </div>
+                        <!-- Students will be dynamically loaded here -->
+                        <p style="text-align: center; color: #666; padding: 20px;">Select a class to view students</p>
                     </div>
                 </div>
             </div>
@@ -644,6 +594,7 @@ select, .date-input {
 
    <script>
 const sectionsData = <%- JSON.stringify(teacher.sections) %>;
+console.log('Sections data loaded:', sectionsData);
 const classSelect = document.getElementById("class-select");
 const studentsContainer = document.querySelector(".students-scroll");
 const uploadArea = document.querySelector('.upload-area');
@@ -651,6 +602,24 @@ const uploadArea = document.querySelector('.upload-area');
 document.addEventListener("DOMContentLoaded", function () {
     const materialSelect = document.getElementById("material-select");
     const fileInput = document.getElementById("material-upload");
+
+    // ----- Class/Section dropdown change -----
+    classSelect.addEventListener("change", function () {
+        const selectedSectionIndex = parseInt(this.value);
+        console.log('Class selected:', selectedSectionIndex);
+        if (!isNaN(selectedSectionIndex) && selectedSectionIndex >= 0 && selectedSectionIndex < sectionsData.length) {
+            renderStudents(selectedSectionIndex);
+        } else {
+            studentsContainer.innerHTML = "<p style='text-align: center; color: #666; padding: 20px;'>Select a class to view students</p>";
+            document.getElementById('attendance-date').textContent = "Select a class to view students";
+        }
+    });
+
+    // Initial render - show first section if available
+    if (sectionsData && sectionsData.length > 0) {
+        classSelect.value = 0;
+        renderStudents(0);
+    }
 
     // ----- Material dropdown change -----
     materialSelect.addEventListener("change", function () {
@@ -708,9 +677,11 @@ document.addEventListener("DOMContentLoaded", function () {
             this.classList.add('btn-primary');
 
             // 1️⃣ Selected section
-            const sectionIndex = classSelect.value;
+            const sectionIndex = parseInt(classSelect.value);
             const section = sectionsData[sectionIndex];
-            if (!section || !section.students.length) {
+            console.log('SMS Assignment - Section index:', sectionIndex);
+            console.log('SMS Assignment - Section found:', section);
+            if (!section || !section.students || !section.students.length) {
                 alert("No students in this class!");
                 return;
             }
@@ -727,6 +698,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const recipients = this.textContent.includes("whole class")
                 ? section.students.map(s => s.phone)
                 : section.students.filter(s => s.status === "ABSENT").map(s => s.phone);
+
+            console.log('SMS Assignment - Recipients:', recipients);
+            console.log('SMS Assignment - Button text:', this.textContent);
+            console.log('SMS Assignment - Section students:', section.students);
 
             if (!recipients.length) {
                 alert("No recipients found!");
@@ -763,33 +738,51 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // ----- Render students for selected section -----
 function renderStudents(sectionIndex) {
+    console.log('Rendering students for section index:', sectionIndex);
     const section = sectionsData[sectionIndex];
+    console.log('Section found:', section);
     studentsContainer.innerHTML = "";
 
-    if (!section || !section.students.length) {
+    if (!section || !section.students || !section.students.length) {
         studentsContainer.innerHTML = "<p>No students found in this section</p>";
+        document.getElementById('attendance-date').textContent = "No students available";
         return;
     }
+
+    // Update attendance date
+    const currentDate = new Date().toLocaleDateString('en-GB');
+    document.getElementById('attendance-date').textContent = currentDate;
 
     section.students.forEach(student => {
         const div = document.createElement("div");
         div.classList.add("attendance-card");
+        
+        // Determine attendance status - default to present if not specified
+        const status = student.status || "PRESENT";
+        const statusClass = status === "PRESENT" ? "status-present" : "status-absent";
+        
         div.innerHTML = `
             <div class="student-info">
                 <input type="checkbox" class="checkbox">
                 <div class="student-details">
-                    <h3>${student.name}</h3>
-                    <p>${student.phone}</p>
+                    <h3>${student.name || 'Unknown Student'}</h3>
+                    <p>${student.phone || 'No phone number'}</p>
                 </div>
             </div>
-            <span class="attendance-status status-present">Present</span>
+            <span class="attendance-status ${statusClass}">${status}</span>
         `;
         studentsContainer.appendChild(div);
     });
 }
 
-// Initial render
-if (sectionsData.length) renderStudents(0);
+// Initial render - show first section if available
+if (sectionsData && sectionsData.length) {
+    const firstSectionId = sectionsData[0]._id || sectionsData[0].id;
+    renderStudents(firstSectionId);
+} else {
+    studentsContainer.innerHTML = "<p style='text-align: center; color: #666; padding: 20px;'>No sections available</p>";
+}
+
 classSelect.addEventListener("change", () => {
     renderStudents(classSelect.value);
 });

@@ -121,10 +121,6 @@ app.get('/logout_student', (req, res) => {
   res.clearCookie('studentToken');
   res.redirect('/login_student');
 });
-app.get('/courses', auth, (req, res) => {
-  if (!res.locals.teacher) return res.redirect('/login');
-  res.render('courses', { teacher: res.locals.teacher });
-});
 // --- ROUTES ---
 app.get('/studentdash', studentAuth, async (req, res) => {
   if (!res.locals.student) return res.redirect('/login_student');
@@ -166,56 +162,53 @@ app.get('/studentdash', studentAuth, async (req, res) => {
     res.render('studentdash', { student: fallbackStudent });
   }
 });
-app.get('/dash', auth, (req, res) => {
-  if (!res.locals.teacher) return res.redirect('/login');
-  res.render('dash', { teacher: res.locals.teacher });
-});
-
-
-app.post('/add-course', auth, async (req, res) => {
+app.get('/dash', auth, async (req, res) => {
+  console.log('=== DASHBOARD PAGE LOAD START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ No teacher in locals, redirecting to login');
+    return res.redirect('/login');
+  }
+  
   try {
-    const { sectionId, courseName, description, status } = req.body;
-
-    // Get teacher ID from res.locals
-    const teacherId = res.locals.teacher.id;
-
-    // Fetch teacher document
-    const teacher = await Teacher.findById(teacherId);
-    if (!teacher) return res.status(404).send('Teacher not found');
-
-    // Find the section by _id
-    console.log('Adding course to section ID:', sectionId);
-      const section = teacher.sections.find(
-  sec => sec._id.toString() === sectionId
-);
-
-    if (!section) {
-      console.log('Available sections:', teacher.sections.map(s => s._id));
-      return res.status(404).send('Section not found');
+    // Fetch the latest teacher data from database to get fresh courses
+    console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+    const teacher = await Teacher.findById(res.locals.teacher.id);
+    if (!teacher) {
+      console.log('❌ Teacher not found in database');
+      return res.status(404).render('error', { message: 'Teacher not found' });
     }
     
-
-    // Initialize courses array if it doesn't exist
-    if (!section.courses) section.courses = [];
-
-    // Push new course with correct field names
-    section.courses.push({
-      courseName,    // matches your schema
-      description,
-      status
+    console.log('✅ Teacher found:', teacher.username);
+    console.log('📊 Teacher sections count:', teacher.sections.length);
+    console.log('📋 Available sections:', teacher.sections.map((sec, idx) => ({ 
+      index: idx, 
+      name: sec.sectionName, 
+      students: sec.students?.length || 0,
+      courses: sec.courses?.length || 0
+    })));
+    
+    // Count total courses across all sections
+    let totalCourses = 0;
+    let completedCourses = 0;
+    teacher.sections.forEach(section => {
+      if (section.courses) {
+        totalCourses += section.courses.length;
+        completedCourses += section.courses.filter(course => course.status === 'completed').length;
+      }
     });
-
-    // Save teacher document
-    await teacher.save();
-
-    return res.redirect('/courses'); // redirect to courses page
+    console.log('📚 Total courses:', totalCourses, 'Completed:', completedCourses);
+    
+    console.log('🎨 Rendering dashboard...');
+    res.render('dash', { teacher: teacher });
+    console.log('=== DASHBOARD PAGE LOAD SUCCESS ===');
   } catch (err) {
-    console.error('Add course error:', err);
-    return res.status(500).send('Server error');
+    console.error('❌ Error fetching teacher data for dashboard:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).render('error', { message: 'Server error' });
   }
 });
-
-
 
 app.get('/', (req, res) => res.render('land'));
 
@@ -317,9 +310,41 @@ if (!allowedTypes.includes(file.mimetype)) {
 });
 
 // --- CLASS ROUTE: GET for page, POST for OCR upload ---
-app.get('/class', auth, (req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    res.render('class', { teacher: res.locals.teacher, ocrStudents: null, ocrDate: null });
+app.get('/class', auth, async (req, res) => {
+    console.log('=== CLASS PAGE LOAD START ===');
+    console.log('Auth check:', !!res.locals.teacher);
+    
+    if (!res.locals.teacher) {
+        console.log('❌ No teacher in locals, redirecting to login');
+        return res.redirect('/login');
+    }
+    
+    try {
+        // Fetch the latest teacher data from database to get fresh courses
+        console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+        const teacher = await Teacher.findById(res.locals.teacher.id);
+        if (!teacher) {
+            console.log('❌ Teacher not found in database');
+            return res.status(404).render('error', { message: 'Teacher not found' });
+        }
+        
+        console.log('✅ Teacher found:', teacher.username);
+        console.log('📊 Teacher sections count:', teacher.sections.length);
+        console.log('📋 Available sections:', teacher.sections.map((sec, idx) => ({ 
+            index: idx, 
+            name: sec.sectionName, 
+            students: sec.students?.length || 0,
+            courses: sec.courses?.length || 0
+        })));
+        
+        console.log('🎨 Rendering class page...');
+        res.render('class', { teacher: teacher, ocrStudents: null, ocrDate: null });
+        console.log('=== CLASS PAGE LOAD SUCCESS ===');
+    } catch (err) {
+        console.error('❌ Error fetching teacher data for class page:', err);
+        console.error('❌ Error stack:', err.stack);
+        res.status(500).render('error', { message: 'Server error' });
+    }
 });
 
 app.post('/class', auth, async (req, res) => {
@@ -405,9 +430,41 @@ app.post('/class', auth, async (req, res) => {
         return res.status(500).json({ error: "Error uploading or parsing file" });
     }
 });
-app.get('/test',auth,(req, res) => {
-    if (!res.locals.teacher) return res.redirect('/login');
-    res.render('test', { teacher: res.locals.teacher });
+app.get('/test', auth, async (req, res) => {
+    console.log('=== TEST PAGE LOAD START ===');
+    console.log('Auth check:', !!res.locals.teacher);
+    
+    if (!res.locals.teacher) {
+        console.log('❌ No teacher in locals, redirecting to login');
+        return res.redirect('/login');
+    }
+    
+    try {
+        // Fetch the latest teacher data from database to get fresh courses
+        console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+        const teacher = await Teacher.findById(res.locals.teacher.id);
+        if (!teacher) {
+            console.log('❌ Teacher not found in database');
+            return res.status(404).render('error', { message: 'Teacher not found' });
+        }
+        
+        console.log('✅ Teacher found:', teacher.username);
+        console.log('📊 Teacher sections count:', teacher.sections.length);
+        console.log('📋 Available sections:', teacher.sections.map((sec, idx) => ({ 
+            index: idx, 
+            name: sec.sectionName, 
+            students: sec.students?.length || 0,
+            courses: sec.courses?.length || 0
+        })));
+        
+        console.log('🎨 Rendering test page...');
+        res.render('test', { teacher: teacher });
+        console.log('=== TEST PAGE LOAD SUCCESS ===');
+    } catch (err) {
+        console.error('❌ Error fetching teacher data for test page:', err);
+        console.error('❌ Error stack:', err.stack);
+        res.status(500).render('error', { message: 'Server error' });
+    }
 });
 
 // Login & Logout
@@ -661,6 +718,353 @@ app.post('/create-test-student', async (req, res) => {
   } catch (err) {
     console.error('Error creating test student:', err);
     res.status(500).json({ success: false, error: 'Server error during student creation' });
+  }
+});
+
+// --- COURSE ROUTES ---
+// GET route to display courses page
+app.get('/courses', auth, async (req, res) => {
+  console.log('=== COURSES PAGE LOAD START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ No teacher in locals, redirecting to login');
+    return res.redirect('/login');
+  }
+  
+  try {
+    // Fetch the latest teacher data from database
+    console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+    const teacher = await Teacher.findById(res.locals.teacher.id);
+    if (!teacher) {
+      console.log('❌ Teacher not found in database');
+      return res.status(404).render('error', { message: 'Teacher not found' });
+    }
+    
+    console.log('✅ Teacher found:', teacher.username);
+    console.log('📊 Teacher sections count:', teacher.sections.length);
+    console.log('📋 Available sections:', teacher.sections.map((sec, idx) => ({ 
+      index: idx, 
+      name: sec.sectionName, 
+      students: sec.students?.length || 0,
+      courses: sec.courses?.length || 0
+    })));
+    
+    console.log('🎨 Rendering courses page...');
+    res.render('courses', { 
+      teacher: teacher,
+      timestamp: Date.now() // Add timestamp to help with cache busting
+    });
+    console.log('=== COURSES PAGE LOAD SUCCESS ===');
+  } catch (err) {
+    console.error('❌ Error fetching teacher data:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).render('error', { message: 'Server error' });
+  }
+});
+
+// POST route to add a new course to a specific section
+app.post('/add-course', auth, async (req, res) => {
+  console.log('=== ADD COURSE REQUEST START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ Unauthorized - no teacher in locals');
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  try {
+    const { courseName, sectionId, description, status } = req.body;
+    console.log('📝 Request body:', { courseName, sectionId, description, status });
+    
+    if (!courseName || !sectionId || !description) {
+      console.log('❌ Missing required fields');
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    
+    // Find the teacher and the specific section
+    console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+    const teacher = await Teacher.findById(res.locals.teacher.id);
+    if (!teacher) {
+      console.log('❌ Teacher not found in database');
+      return res.status(404).json({ success: false, error: 'Teacher not found' });
+    }
+    
+    console.log('✅ Teacher found:', teacher.username);
+    console.log('📊 Teacher sections count:', teacher.sections.length);
+    console.log('📋 Available sections:', teacher.sections.map((sec, idx) => ({ 
+      index: idx, 
+      name: sec.sectionName, 
+      students: sec.students?.length || 0,
+      courses: sec.courses?.length || 0
+    })));
+    
+    // Find the section by index
+    const sectionIndex = parseInt(sectionId);
+    console.log('🔢 Parsed section index:', sectionIndex);
+    console.log('🔢 Is valid number?', !isNaN(sectionIndex));
+    console.log('🔢 Index >= 0?', sectionIndex >= 0);
+    console.log('🔢 Index < sections.length?', sectionIndex < teacher.sections.length);
+    
+    if (isNaN(sectionIndex) || sectionIndex < 0 || sectionIndex >= teacher.sections.length) {
+      console.log('❌ Invalid section index');
+      // If no sections found, return a more helpful error
+      if (teacher.sections.length === 0) {
+        console.log('❌ No sections available');
+        return res.status(404).json({ success: false, error: 'No sections available. Please create a section first.' });
+      }
+      
+      // If section not found, suggest refreshing the page
+      console.log('❌ Section index out of bounds');
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Section not found. The page data might be outdated. Please refresh the page and try again.'
+      });
+    }
+    
+    const section = teacher.sections[sectionIndex];
+    console.log('✅ Section found:', section.sectionName);
+    console.log('📚 Current courses in section:', section.courses?.length || 0);
+    
+    // Initialize courses array if it doesn't exist
+    if (!section.courses) {
+      console.log('🔧 Initializing courses array for section');
+      section.courses = [];
+    }
+    
+    // Add the new course to the section
+    const newCourse = {
+      courseName: courseName,
+      description: description,
+      status: status || 'active'
+    };
+    console.log('➕ Adding new course:', newCourse);
+    
+    section.courses.push(newCourse);
+    console.log('📚 Courses after adding:', section.courses.length);
+    
+    // Save the teacher document
+    console.log('💾 Saving teacher document...');
+    await teacher.save();
+    console.log('✅ Teacher document saved successfully');
+    
+    console.log('=== ADD COURSE REQUEST SUCCESS ===');
+    res.json({ 
+      success: true, 
+      message: 'Course added successfully',
+      course: newCourse
+    });
+    
+  } catch (err) {
+    console.error('❌ Error adding course:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).json({ success: false, error: 'Server error while adding course' });
+  }
+});
+
+// POST route to delete a course from a specific section
+app.post('/teacher/course/delete', auth, async (req, res) => {
+  console.log('=== DELETE COURSE REQUEST START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ Unauthorized - no teacher in locals');
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  try {
+    const { sectionId, courseId } = req.body;
+    console.log('📝 Delete request body:', { sectionId, courseId });
+    
+    if (!sectionId || !courseId) {
+      console.log('❌ Missing section or course ID');
+      return res.status(400).json({ success: false, error: 'Missing section or course ID' });
+    }
+    
+    // Find the teacher and the specific section
+    console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+    const teacher = await Teacher.findById(res.locals.teacher.id);
+    if (!teacher) {
+      console.log('❌ Teacher not found in database');
+      return res.status(404).json({ success: false, error: 'Teacher not found' });
+    }
+    
+    console.log('✅ Teacher found:', teacher.username);
+    console.log('📊 Teacher sections count:', teacher.sections.length);
+    
+    // Find the section by index
+    const sectionIndex = parseInt(sectionId);
+    console.log('🔢 Parsed section index:', sectionIndex);
+    console.log('🔢 Is valid number?', !isNaN(sectionIndex));
+    console.log('🔢 Index >= 0?', sectionIndex >= 0);
+    console.log('🔢 Index < sections.length?', sectionIndex < teacher.sections.length);
+    
+    if (isNaN(sectionIndex) || sectionIndex < 0 || sectionIndex >= teacher.sections.length) {
+      console.log('❌ Invalid section index');
+      return res.status(404).json({ success: false, error: 'Section not found' });
+    }
+    
+    const section = teacher.sections[sectionIndex];
+    console.log('✅ Section found:', section.sectionName);
+    console.log('📚 Current courses in section:', section.courses?.length || 0);
+    
+    // Find the course by index
+    const courseIndex = parseInt(courseId);
+    console.log('🔢 Parsed course index:', courseIndex);
+    console.log('🔢 Is valid number?', !isNaN(courseIndex));
+    console.log('🔢 Index >= 0?', courseIndex >= 0);
+    console.log('🔢 Index < courses.length?', courseIndex < (section.courses?.length || 0));
+    
+    if (isNaN(courseIndex) || courseIndex < 0 || courseIndex >= (section.courses?.length || 0)) {
+      console.log('❌ Invalid course index');
+      return res.status(404).json({ success: false, error: 'Course not found' });
+    }
+    
+    const courseToDelete = section.courses[courseIndex];
+    console.log('🗑️ Course to delete:', courseToDelete);
+    
+    // Remove the course from the section using array splice
+    section.courses.splice(courseIndex, 1);
+    console.log('📚 Courses after deletion:', section.courses.length);
+    
+    // Save the teacher document
+    console.log('💾 Saving teacher document...');
+    await teacher.save();
+    console.log('✅ Teacher document saved successfully');
+    
+    console.log('=== DELETE COURSE REQUEST SUCCESS ===');
+    res.json({ 
+      success: true, 
+      message: 'Course deleted successfully'
+    });
+    
+  } catch (err) {
+    console.error('❌ Error deleting course:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).json({ success: false, error: 'Server error while deleting course' });
+  }
+});
+
+// POST route to assign test to students
+app.post('/assign-test', auth, async (req, res) => {
+  console.log('=== ASSIGN TEST ROUTE HIT ===');
+  console.log('=== ASSIGN TEST REQUEST START ===');
+  console.log('Auth check:', !!res.locals.teacher);
+  
+  if (!res.locals.teacher) {
+    console.log('❌ Unauthorized - no teacher in locals');
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  try {
+    const { 
+      testName, 
+      courseName, 
+      dueDate, 
+      fileUrl, 
+      fileName, 
+      studentPhones, 
+      sectionIndex 
+    } = req.body;
+    
+    console.log('📝 Assign test request body:', { 
+      testName, 
+      courseName, 
+      dueDate, 
+      fileUrl, 
+      fileName, 
+      studentPhones, 
+      sectionIndex 
+    });
+    
+    console.log('📝 Raw request body:', req.body);
+    console.log('📝 studentPhones type:', typeof studentPhones);
+    console.log('📝 studentPhones value:', studentPhones);
+    console.log('📝 studentPhones is array:', Array.isArray(studentPhones));
+    console.log('📝 studentPhones length:', studentPhones?.length);
+    
+    // Only require essential fields
+    if (!studentPhones || !Array.isArray(studentPhones) || studentPhones.length === 0) {
+      console.log('❌ Missing required fields: studentPhones');
+      console.log('❌ studentPhones validation failed:', {
+        exists: !!studentPhones,
+        isArray: Array.isArray(studentPhones),
+        length: studentPhones?.length
+      });
+      return res.status(400).json({ success: false, error: 'Please select at least one student' });
+    }
+    
+    // Set default values for optional fields
+    const finalTestName = testName || 'Test Assignment';
+    const finalCourseName = courseName || 'General';
+    const finalDueDate = dueDate || 'Not specified';
+    const finalFileName = fileName || 'Test File';
+    
+    console.log('📝 Using values:', {
+      testName: finalTestName,
+      courseName: finalCourseName,
+      dueDate: finalDueDate,
+      fileName: finalFileName,
+      fileUrl: fileUrl || 'No file uploaded'
+    });
+    
+    // Find the teacher to get teacher info
+    console.log('🔍 Looking for teacher with ID:', res.locals.teacher.id);
+    const teacher = await Teacher.findById(res.locals.teacher.id);
+    if (!teacher) {
+      console.log('❌ Teacher not found in database');
+      return res.status(404).json({ success: false, error: 'Teacher not found' });
+    }
+    
+    console.log('✅ Teacher found:', teacher.username);
+    
+    // Find students by phone numbers
+    console.log('🔍 Looking for students with phones:', studentPhones);
+    const students = await Student.find({ phone: { $in: studentPhones } });
+    console.log('✅ Found students:', students.length);
+    
+    if (students.length === 0) {
+      console.log('❌ No students found with provided phone numbers');
+      return res.status(404).json({ success: false, error: 'No students found with provided phone numbers' });
+    }
+    
+    // Create test assignment object
+    const testAssignment = {
+      testName: finalTestName,
+      subject: finalCourseName,
+      courseName: finalCourseName,
+      dueDate: finalDueDate,
+      fileUrl: fileUrl || '',
+      fileName: finalFileName,
+      teacherId: teacher._id.toString(),
+      teacherName: teacher.username,
+      assignedDate: new Date(),
+      status: 'assigned'
+    };
+    
+    console.log('📚 Test assignment object:', testAssignment);
+    
+    // Add test assignment to each student
+    const updatePromises = students.map(async (student) => {
+      console.log(`📝 Adding test to student: ${student.name} (${student.phone})`);
+      student.assignedTests.push(testAssignment);
+      return student.save();
+    });
+    
+    await Promise.all(updatePromises);
+    console.log('✅ Test assigned to all students successfully');
+    
+    console.log('=== ASSIGN TEST REQUEST SUCCESS ===');
+    res.json({
+      success: true,
+      message: `Test assigned to ${students.length} student(s) successfully`,
+      assignedStudents: students.map(s => ({ name: s.name, phone: s.phone }))
+    });
+    
+  } catch (err) {
+    console.error('❌ Error assigning test:', err);
+    console.error('❌ Error stack:', err.stack);
+    res.status(500).json({ success: false, error: 'Server error while assigning test' });
   }
 });
 
