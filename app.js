@@ -20,9 +20,9 @@ let TestAssignmentModel;
 
 dotenv.config();
 
-const accountSid = "ACf7688481cac5cc8144b00fb7b87d5044";
-const authToken  = "04ca1f7529dae8f57986067811aaea1a";
-const twilioNumber = "+14172724533"; 
+const accountSid = "ACf691596e7aa4f6b1e86b8928ca1d3464";
+const authToken  = "7174ff44115031211250df46eb68125b";
+const twilioNumber = "+12293982958"; 
 const JWT_SECRET = "rishik@123";
 
 const app = express();
