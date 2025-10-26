@@ -87,7 +87,7 @@ const studentAuth = (req, res, next) => {
     res.locals.student = null;
   }
   next();
-};
+};  
 app.get('/register_student', (req, res) => {
   console.log('Register student route accessed');
   // Don't redirect if already logged in - allow registration of new accounts
